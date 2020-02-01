@@ -3,6 +3,7 @@ package kmssigner
 import (
 	"context"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io"
 
 	"crypto"
@@ -18,6 +19,7 @@ type kmsSigner struct {
 	kmsapi *kms.KMS
 	keyArn string
 	pubKey crypto.PublicKey
+	entry  *log.Entry
 }
 
 func New(kmsapi *kms.KMS, keyArn string) (crypto.Signer, error) {
@@ -32,10 +34,15 @@ func New(kmsapi *kms.KMS, keyArn string) (crypto.Signer, error) {
 		return nil, err
 	}
 
+	entry := log.WithFields(log.Fields{
+		"kmssigner.kms.key_arn": keyArn,
+	})
+
 	return kmsSigner{
 		kmsapi: kmsapi,
 		keyArn: keyArn,
 		pubKey: pubKey,
+		entry:  entry,
 	}, nil
 }
 
@@ -46,8 +53,14 @@ func (k kmsSigner) Public() crypto.PublicKey {
 func (k kmsSigner) Sign(_ io.Reader, digest []byte, opts crypto.SignerOpts) ([]byte, error) {
 	signingAlgorithm, err := kmsSigningAlgorithm(k.pubKey, opts)
 	if err != nil {
+		k.entry.WithFields(log.Fields{"error": err}).Warn("failed to get signature algorithm")
 		return nil, err
 	}
+
+	l := k.entry.WithFields(log.Fields{
+		"kmssigner.kms.signing_algorithm": signingAlgorithm,
+		"request.digest":                  fmt.Sprintf("%x", digest),
+	})
 
 	signatureResponse, err := k.kmsapi.SignWithContext(context.TODO(), &kms.SignInput{
 		KeyId:            aws.String(k.keyArn),
@@ -56,8 +69,10 @@ func (k kmsSigner) Sign(_ io.Reader, digest []byte, opts crypto.SignerOpts) ([]b
 		SigningAlgorithm: aws.String(signingAlgorithm),
 	})
 	if err != nil {
+		l.WithFields(log.Fields{"error": err}).Warn("kms api call returned an error")
 		return nil, err
 	}
+	l.Debug("sucessfully signed via kms")
 	return signatureResponse.Signature, nil
 }
 
