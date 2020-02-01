@@ -1,0 +1,32 @@
+on:
+  pull_request: {}
+  push:
+    branches:
+      - master
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: ['1.13']
+    name: Go ${{ matrix.go }} build
+    steps:
+      - uses: actions/checkout@master
+      - name: Setup go
+        uses: actions/setup-go@v1
+        with:
+          go-version: ${{ matrix.go }}
+      - run: go build
+      - run: go vet ./...
+      - run: |
+          output=$(go fmt ./...)
+          if [[ ! "$output" = "" ]]; then
+            printf "The following files are not go formatted:\n%s\n" "$output"
+            exit 1
+          fi
+      - run: |
+          go mod tidy -v
+          git --no-pager diff go.mod go.sum
+          git --no-pager diff --quiet go.mod go.sum
