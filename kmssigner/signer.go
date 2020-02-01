@@ -93,6 +93,8 @@ func kmsSigningAlgorithm(pub crypto.PublicKey, opts crypto.SignerOpts) (string, 
 			return kms.SigningAlgorithmSpecRsassaPkcs1V15Sha384, nil
 		case crypto.SHA512:
 			return kms.SigningAlgorithmSpecRsassaPkcs1V15Sha512, nil
+		default:
+			return "", fmt.Errorf("hallow/kmssigner: unknown hash algorithm for use with RSA")
 		}
 	}
 
