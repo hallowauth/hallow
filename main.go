@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"time"
 
@@ -39,16 +39,25 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 	principal := event.RequestContext.Identity.UserArn
 	publicKey, comment, _, _, err := ssh.ParseAuthorizedKey([]byte(event.Body))
 	if err != nil {
-		log.Println(err)
+		log.WithFields(log.Fields{"error": err}).Warn("Incoming SSH key is invalid")
 		return "", err
 	}
+	l := log.WithFields(log.Fields{
+		"request.comment":         comment,
+		"request.public_key.type": publicKey.Type(),
+	})
 	if !stringSliceContains(publicKey.Type(), c.allowedKeyTypes) {
-		return "", fmt.Errorf("Disallowed public key type: %s", publicKey.Type())
+		err := fmt.Errorf("Disallowed public key type: %s", publicKey.Type())
+		l.WithFields(log.Fields{
+			"hallow.allowed_key_types": c.allowedKeyTypes,
+			"error":                    err,
+		}).Warn("Incoming SSH key is not the right type")
+		return "", err
 	}
 
 	var b [8]byte
 	if _, err := c.ca.Rand.Read(b[:]); err != nil {
-		log.Println(err)
+		l.WithFields(log.Fields{"error": err}).Warn("Can't create a nonce")
 		return "", err
 	}
 
@@ -65,9 +74,17 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 
 	sshCert, _, err := c.ca.SignAndParse(template)
 	if err != nil {
-		log.Println(err)
+		l.WithFields(log.Fields{"error": err}).Warn("The CA can't sign the Certificate")
 		return "", err
 	}
+	l.WithFields(log.Fields{
+		"response.certificate.type":         sshCert.Type(),
+		"response.certificate.serial":       serial,
+		"response.certificate.key_id":       template.KeyId,
+		"response.certificate.valid_after":  template.ValidAfter,
+		"response.certificate.valid_before": template.ValidBefore,
+		"response.certificate.principals":   template.ValidPrincipals,
+	}).Info("CA Signed the Public Key")
 	return fmt.Sprintf("%s %s\n", sshCert.Type(), base64.StdEncoding.EncodeToString(sshCert.Marshal())), nil
 }
 
