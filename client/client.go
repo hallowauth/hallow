@@ -15,7 +15,6 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
-	// "github.com/ScaleFT/sshkeys"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/aws/signer/v4"
 )
