@@ -75,7 +75,7 @@ func (c Client) GenerateAndRequestCertificate(
 	l = l.WithFields(log.Fields{"hallow.public_key.type": sshPubKey.Type()})
 
 	sshPubKey, err = c.RequestCertificate(
-		context.TODO(),
+		ctx,
 		sshPubKey,
 		comment,
 	)
