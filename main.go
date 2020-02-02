@@ -80,15 +80,16 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 		ValidPrincipals: []string{principal},
 		ValidAfter:      uint64(time.Now().Add(-time.Second * 5).Unix()),
 		ValidBefore:     uint64(time.Now().Add(c.certAge).Unix()),
-	}
-
-	template.Permissions.CriticalOptions = map[string]string{}
-	template.Permissions.Extensions = map[string]string{
-		// "permit-X11-forwarding":   "",
-		"permit-agent-forwarding": "",
-		"permit-port-forwarding":  "",
-		"permit-pty":              "",
-		"permit-user-rc":          "",
+		Permissions: ssh.Permissions{
+			CriticalOptions: map[string]string{},
+			Extensions: map[string]string{
+				// "permit-X11-forwarding":   "",
+				"permit-agent-forwarding": "",
+				"permit-port-forwarding":  "",
+				"permit-pty":              "",
+				"permit-user-rc":          "",
+			},
+		},
 	}
 
 	sshCert, _, err := c.ca.SignAndParse(template)
