@@ -29,13 +29,8 @@ var (
 			},
 			&cli.StringFlag{
 				Name:  "key-type",
-				Usage: "Key type to generate [ecdsa|ed25519]",
-				Value: "ecdsa",
-			},
-			&cli.IntFlag{
-				Name:  "key-bits",
-				Usage: "for ecdsa, this will select curve sizes [256|384|521]",
-				Value: 384,
+				Usage: "Key type to generate [ecdsa256|ecdsa384|ecdsa521|ed25519]",
+				Value: "ecdsa384",
 			},
 		},
 	}
