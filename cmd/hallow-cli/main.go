@@ -24,8 +24,6 @@ func keyTypeFromCLI(c *cli.Context) (client.KeyType, error) {
 		switch c.Int("key-bits") {
 		case 0:
 			return 0, fmt.Errorf("hallow-cli: must provide bit length for ecdsa keys")
-		case 224:
-			return client.KeyTypeECDSAP224, nil
 		case 256:
 			return client.KeyTypeECDSAP256, nil
 		case 384:

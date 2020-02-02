@@ -13,8 +13,7 @@ import (
 type KeyType uint8
 
 const (
-	KeyTypeECDSAP224 KeyType = iota
-	KeyTypeECDSAP256
+	KeyTypeECDSAP256 KeyType = iota
 	KeyTypeECDSAP384
 	KeyTypeECDSAP521
 	KeyTypeED25519
@@ -27,11 +26,9 @@ const (
 //
 func generateKey(rand io.Reader, keyType KeyType) (crypto.Signer, crypto.PublicKey, error) {
 	switch keyType {
-	case KeyTypeECDSAP224, KeyTypeECDSAP256, KeyTypeECDSAP384, KeyTypeECDSAP521:
+	case KeyTypeECDSAP256, KeyTypeECDSAP384, KeyTypeECDSAP521:
 		var curve elliptic.Curve
 		switch keyType {
-		case KeyTypeECDSAP224:
-			curve = elliptic.P224()
 		case KeyTypeECDSAP256:
 			curve = elliptic.P256()
 		case KeyTypeECDSAP384:
