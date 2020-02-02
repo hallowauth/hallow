@@ -44,6 +44,11 @@ func New(kmsapi *kms.KMS, keyArn string) (crypto.Signer, error) {
 		"kmssigner.kms.key_arn": keyArn,
 	})
 
+	if len(keyArn) == 0 {
+		l.Warn("The provided keyArn is empty!")
+		return nil, fmt.Errorf("hallow/kmssigner: keyArn is an empty string")
+	}
+
 	pubKeyResponse, err := kmsapi.GetPublicKeyWithContext(
 		context.TODO(),
 		&kms.GetPublicKeyInput{
