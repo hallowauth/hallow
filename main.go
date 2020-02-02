@@ -8,12 +8,14 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"os"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/ssh"
 
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
+	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kms"
 
@@ -35,8 +37,61 @@ type config struct {
 	certAge         time.Duration
 }
 
+// User ARNs are from IAM, and can take a few forms. The reason why
+// we can't use them directly is that ARNs from STS can have some non-determinism
+// in them, such as the session name.
+//
+// As a result, we'll pass through the ARN if it's an IAM ARN, but if it's
+// STS, we'll trim the ARN down to the first two blocks.
+//
+// For more information on this class of nonsense, you may consider
+// https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_identifiers.html
+// for some bedtime reading.
+func createPrincipalName(userArn arn.ARN) (string, error) {
+	switch userArn.Service {
+	case "sts":
+		chunks := strings.Split(userArn.Resource, "/")
+		if len(chunks) == 0 {
+			return "", fmt.Errorf("hallow: user arn resource is missing")
+		}
+		switch chunks[0] {
+		case "assumed-role":
+			if len(chunks) != 3 {
+				return "", fmt.Errorf("hallow: malformed assumed-role resource")
+			}
+			userArn.Resource = fmt.Sprintf("%s/%s", chunks[0], chunks[1])
+			return userArn.String(), nil
+		default:
+			return "", fmt.Errorf("hallow: unsupported sts resource type")
+		}
+	case "iam":
+		// for IAM, we can have a few formats, but all are deterministic
+		// and stable.
+		return userArn.String(), nil
+	default:
+		return "", fmt.Errorf("hallow: unknown userArn service")
+	}
+}
+
 func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	principal := event.RequestContext.Identity.UserArn
+	userArn, err := arn.Parse(event.RequestContext.Identity.UserArn)
+	if err != nil {
+		log.WithFields(log.Fields{"error": err}).Warn("Incoming ARN is invalid")
+		return events.APIGatewayProxyResponse{
+			Body:       "Malformed request",
+			StatusCode: 400,
+		}, nil
+	}
+
+	principal, err := createPrincipalName(userArn)
+	if err != nil {
+		log.WithFields(log.Fields{"error": err}).Warn("Incoming ARN isn't a valid principal")
+		return events.APIGatewayProxyResponse{
+			Body:       "Malformed request",
+			StatusCode: 400,
+		}, nil
+	}
+
 	publicKey, comment, _, _, err := ssh.ParseAuthorizedKey([]byte(event.Body))
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Warn("Incoming SSH key is invalid")
