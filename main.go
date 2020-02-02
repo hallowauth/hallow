@@ -38,7 +38,7 @@ type config struct {
 }
 
 // User ARNs are from IAM, and can take a few forms. The reason why
-// we can't use them directly is that ARNs from STS can have some non-determinsm
+// we can't use them directly is that ARNs from STS can have some non-determinism
 // in them, such as the session name.
 //
 // As a result, we'll pass through the ARN if it's an IAM ARN, but if it's
