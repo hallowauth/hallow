@@ -95,10 +95,11 @@ func CreateCertificate(
 		ValidAfter:      template.ValidAfter,
 		ValidBefore:     template.ValidBefore,
 		SignatureKey:    parent,
+		Permissions: ssh.Permissions{
+			CriticalOptions: template.CriticalOptions,
+			Extensions:      template.Extensions,
+		},
 	}
-
-	cert.Permissions.CriticalOptions = template.CriticalOptions
-	cert.Permissions.Extensions = template.Extensions
 
 	err = cert.SignCert(rand, priv)
 	if err != nil {
