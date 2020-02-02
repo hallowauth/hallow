@@ -9,7 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/urfave/cli/v2"
 
-	"github.com/alex/hallow/client"
+	"github.com/hallowauth/hallow/client"
 )
 
 //

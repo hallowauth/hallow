@@ -3,11 +3,12 @@ package main
 import (
 	"fmt"
 
-	"github.com/alex/hallow/kmssigner"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kms"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/crypto/ssh"
+
+	"github.com/hallowauth/hallow/kmssigner"
 )
 
 var (
