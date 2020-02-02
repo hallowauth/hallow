@@ -77,8 +77,10 @@ func Sign(c *cli.Context) error {
 		_, err = fd.Write(ssh.MarshalAuthorizedKey(pubKey))
 		if err != nil {
 			l.WithFields(log.Fields{"error": err}).Warn("failed to write cert to open file")
+			fd.Close()
 			return err
 		}
+		fd.Close()
 		l.Debug("Successfully wrote Certificate out")
 	}
 
