@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"crypto/rand"
-	"encoding/base64"
 	"encoding/binary"
 	"fmt"
 	log "github.com/sirupsen/logrus"
@@ -164,11 +163,7 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 	}).Info("CA Signed the Public Key")
 
 	return events.APIGatewayProxyResponse{
-		Body: fmt.Sprintf(
-			"%s %s\n",
-			sshCert.Type(),
-			base64.StdEncoding.EncodeToString(sshCert.Marshal()),
-		),
+		Body:       string(ssh.MarshalAuthorizedKey(sshCert)),
 		StatusCode: 200,
 	}, nil
 }
