@@ -9,7 +9,6 @@ resolve the IAM identity of the requestee. The API Gateway triggers a Lambda
 running Hallow, which will take the AWS IAM User ARN, and sign the provided
 SSH Public Key with an asymmetric key (either RSA or ECDSA) stored in KMS.
 
-
 ## What does it use as the SSH Principal?
 
 Hallow will set the Principal to the User ARN of the incoming request. In
@@ -21,6 +20,13 @@ part of the ARN) is user-controlled, and usually set to something helpful
 (like the username of the person assuming the role, or the `i-*` instance ID),
 but is not significant, or any assertion of identity. As a result, session
 names are removed from `assumed-role` ARNs.
+
+## Deploying Hallow
+
+The easiest way to deploy Hallow is with the Terraform module provided in the
+`terraform/` directory. It will deploy all the AWS resources required for
+Hallow to work. Note that you will need to build `hallow` and create a
+`hallow.zip` and place it in S3.
 
 ## What do I need to do to my system to trust Hallow?
 
