@@ -14,6 +14,13 @@ var (
 		Name:   "ssh",
 		Usage:  "Prints the command to SSH into a server. Generally used `eval $(hallow-cli ssh myserver.com)`",
 		Action: SSH,
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  "key-id",
+				Value: "hallow",
+				Usage: "KeyID to use for the SSH Certificate",
+			},
+		},
 	}
 )
 
@@ -27,7 +34,7 @@ func SSH(c *cli.Context) error {
 	signer, sshCert, err := hallow.GenerateAndRequestCertificate(
 		c.Context,
 		client.KeyTypeED25519,
-		"",
+		c.String("key-id"),
 	)
 	if err != nil {
 		return err
