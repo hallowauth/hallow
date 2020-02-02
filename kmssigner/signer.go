@@ -15,6 +15,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/kms"
 )
 
+// kmsSigner is the internal bit of state used to create a crypto.Signer.
+//
+// This has no exported functions or params besides the signer interface,
+// so this type was not exported.
 type kmsSigner struct {
 	kmsapi *kms.KMS
 	keyArn string
@@ -22,34 +26,55 @@ type kmsSigner struct {
 	entry  *log.Entry
 }
 
+// New will create a new KMS Signer.
+//
+// The returned crypto.Signer will, when asked to sign, invoke the KMS to
+// Sign the requested digest without holding the private key in memory at
+// any time.
+//
+// When New is invoked, New will fetch the PublicKey from the KMS, and
+// create a crypto.Signer that's able to preform the signing operations
+// using the corresponding KMS private key.
+//
+// The returned crypto.Signer is an internal type, and contains no
+// methods or exported fields beyond those required from the crypto.Signer
+// interface.
 func New(kmsapi *kms.KMS, keyArn string) (crypto.Signer, error) {
-	pubKeyResponse, err := kmsapi.GetPublicKeyWithContext(context.TODO(), &kms.GetPublicKeyInput{
-		KeyId: aws.String(keyArn),
+	l := log.WithFields(log.Fields{
+		"kmssigner.kms.key_arn": keyArn,
 	})
+
+	pubKeyResponse, err := kmsapi.GetPublicKeyWithContext(
+		context.TODO(),
+		&kms.GetPublicKeyInput{
+			KeyId: aws.String(keyArn),
+		},
+	)
 	if err != nil {
-		return nil, err
-	}
-	pubKey, err := x509.ParsePKIXPublicKey(pubKeyResponse.PublicKey)
-	if err != nil {
+		l.WithFields(log.Fields{"error": err}).Warn("Failed to get the Public Key")
 		return nil, err
 	}
 
-	entry := log.WithFields(log.Fields{
-		"kmssigner.kms.key_arn": keyArn,
-	})
+	pubKey, err := x509.ParsePKIXPublicKey(pubKeyResponse.PublicKey)
+	if err != nil {
+		l.WithFields(log.Fields{"error": err}).Warn("Failed to parse the PublicKey")
+		return nil, err
+	}
 
 	return kmsSigner{
 		kmsapi: kmsapi,
 		keyArn: keyArn,
 		pubKey: pubKey,
-		entry:  entry,
+		entry:  l,
 	}, nil
 }
 
+// Public will return the Public Key that this Signer will sign for.
 func (k kmsSigner) Public() crypto.PublicKey {
 	return k.pubKey
 }
 
+// Sign will, well, sign things.
 func (k kmsSigner) Sign(_ io.Reader, digest []byte, opts crypto.SignerOpts) ([]byte, error) {
 	signingAlgorithm, err := kmsSigningAlgorithm(k.pubKey, opts)
 	if err != nil {
