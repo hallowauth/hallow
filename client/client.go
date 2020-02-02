@@ -142,7 +142,7 @@ func (c Client) RequestCertificate(
 	if response.StatusCode != http.StatusOK {
 		responseBody, _ := ioutil.ReadAll(response.Body)
 		err := fmt.Errorf(
-			"HTTP error from hallow. Status=%d: %s",
+			"hallow/client: HTTP error from hallow. Status=%d: %s",
 			response.StatusCode,
 			responseBody,
 		)
