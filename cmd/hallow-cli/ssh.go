@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/alex/hallow/client"
 	"github.com/urfave/cli/v2"
+
+	"github.com/hallowauth/hallow/client"
 )
 
 var (

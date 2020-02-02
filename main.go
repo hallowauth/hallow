@@ -18,7 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/kms"
 
-	"github.com/alex/hallow/kmssigner"
+	"github.com/hallowauth/hallow/kmssigner"
 )
 
 func stringSliceContains(s string, v []string) bool {
