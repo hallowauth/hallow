@@ -30,3 +30,10 @@ jobs:
           go mod tidy -v
           git --no-pager diff go.mod go.sum
           git --no-pager diff --quiet go.mod go.sum
+      # When we have multiple items in our build matrix, make these only run
+      # on one of them.
+      - run: zip hallow.zip hallow
+      - uses: actions/upload-artifact@v1
+        with:
+          name: hallow.zip
+          path: hallow.zip
