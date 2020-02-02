@@ -1,6 +1,4 @@
-module github.com/alex/hallow
-
-go 1.14
+module github.com/hallowauth/hallow
 
 require (
 	github.com/ScaleFT/sshkeys v0.0.0-20181112160850-82451a803681
