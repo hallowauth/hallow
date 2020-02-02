@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
-	"net/http"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -14,7 +13,7 @@ import (
 
 //
 func hallowClientFromCLI(c *cli.Context) client.Client {
-	return client.New(session.New(), http.DefaultClient, c.String("endpoint"))
+	return client.New(session.New(), c.String("endpoint"))
 }
 
 //
