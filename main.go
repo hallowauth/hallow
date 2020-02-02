@@ -35,12 +35,16 @@ type config struct {
 	certAge         time.Duration
 }
 
-func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxyRequest) (string, error) {
+func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	principal := event.RequestContext.Identity.UserArn
 	publicKey, comment, _, _, err := ssh.ParseAuthorizedKey([]byte(event.Body))
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Warn("Incoming SSH key is invalid")
-		return "", err
+		return events.APIGatewayProxyResponse{
+			Body:       "Malformed request",
+			StatusCode: 400,
+		}, nil
+
 	}
 	l := log.WithFields(log.Fields{
 		"request.comment":         comment,
@@ -52,13 +56,19 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 			"hallow.allowed_key_types": c.allowedKeyTypes,
 			"error":                    err,
 		}).Warn("Incoming SSH key is not the right type")
-		return "", err
+		return events.APIGatewayProxyResponse{
+			Body:       "Malformed request",
+			StatusCode: 400,
+		}, nil
 	}
 
 	var b [8]byte
 	if _, err := c.ca.Rand.Read(b[:]); err != nil {
 		l.WithFields(log.Fields{"error": err}).Warn("Can't create a nonce")
-		return "", err
+		return events.APIGatewayProxyResponse{
+			Body:       "Internal server error",
+			StatusCode: 500,
+		}, nil
 	}
 
 	serial := int64(binary.LittleEndian.Uint64(b[:]))
@@ -75,7 +85,10 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 	sshCert, _, err := c.ca.SignAndParse(template)
 	if err != nil {
 		l.WithFields(log.Fields{"error": err}).Warn("The CA can't sign the Certificate")
-		return "", err
+		return events.APIGatewayProxyResponse{
+			Body:       "Malformed request",
+			StatusCode: 400,
+		}, nil
 	}
 	l.WithFields(log.Fields{
 		"response.certificate.type":         sshCert.Type(),
@@ -85,7 +98,15 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 		"response.certificate.valid_before": template.ValidBefore,
 		"response.certificate.principals":   template.ValidPrincipals,
 	}).Info("CA Signed the Public Key")
-	return fmt.Sprintf("%s %s\n", sshCert.Type(), base64.StdEncoding.EncodeToString(sshCert.Marshal())), nil
+
+	return events.APIGatewayProxyResponse{
+		Body: fmt.Sprintf(
+			"%s %s\n",
+			sshCert.Type(),
+			base64.StdEncoding.EncodeToString(sshCert.Marshal()),
+		),
+		StatusCode: 200,
+	}, nil
 }
 
 func main() {
