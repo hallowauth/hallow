@@ -28,11 +28,6 @@ First, the `/etc/ssh/sshd_config` should be updated to add a few flags.
 The first is to add the SSH Certificate Authorities, and the second is to
 set which principals are allowed for which users on the system.
 
-```
-TrustedUserCAKeys=/path/to/ca-keys
-AuthorizedPrincipalsFile=/path/to/user-files/%u
-```
-
 `TrustedUserCAKeys` is a list of SSH Public Keys in the `authorized_keys`
 format, seperated by newlines. This file should contain Hallow's KMS
 Public Key in SSH format.
@@ -43,3 +38,26 @@ user, so it's a good idea to keep a directory full of files named after
 users of the system. Hallow will set the principal of the Certificate to
 the User ARN, so these files should specify the ARNs allowed to access the
 particular resources.
+
+### sshd_config
+
+```
+TrustedUserCAKeys=/etc/ssh/hallow_cas
+AuthorizedPrincipalsFile=/etc/ssh/principals/%u
+```
+
+### hallow_cas
+
+Set this file to your own roots. This is an example file, and not the
+the one you should put in your own file, unless you want the authors
+of this package to have root on your boxes.
+
+```
+ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFvuBGdFLPNRg+xZkGfQ5u9V3FD6etx0cz0fx6HkjzAvZ0W/FF4HYZPsCkLpsJhjaRfF1Nm9mNXiyaHsrkfaKgQ=
+```
+
+### principals/%u
+
+```
+arn:aws:iam::12345.....098:root
+```
