@@ -47,7 +47,7 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 		"request.public_key.type": publicKey.Type(),
 	})
 	if !stringSliceContains(publicKey.Type(), c.allowedKeyTypes) {
-		err := fmt.Errorf("Disallowed public key type: %s", publicKey.Type())
+		err := fmt.Errorf("hallow: Disallowed public key type: %s", publicKey.Type())
 		l.WithFields(log.Fields{
 			"hallow.allowed_key_types": c.allowedKeyTypes,
 			"error":                    err,
