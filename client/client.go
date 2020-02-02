@@ -2,10 +2,12 @@ package client
 
 import (
 	"context"
-	// "crypto/ed25519"
-	// "crypto/rand"
+	"crypto"
+	"crypto/ed25519"
+	"crypto/rand"
 	"encoding/base64"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -18,12 +20,16 @@ import (
 	"github.com/aws/aws-sdk-go/aws/signer/v4"
 )
 
+// Client is an encapsulation of the configuration and state required to request
+// a new ssh certificate from the Hallow server.
 type Client struct {
 	session    *session.Session
 	endpoint   string
 	httpClient *http.Client
 }
 
+// New creates a new Client object with the configured AWS session, HTTP
+// Client, and the Hallow API endpoint.
 func New(sess *session.Session, client *http.Client, endpoint string) Client {
 	return Client{
 		session:    sess,
@@ -32,6 +38,10 @@ func New(sess *session.Session, client *http.Client, endpoint string) Client {
 	}
 }
 
+// We need to expose keyToString because `ssh.MarshalAuthorizedKey` will
+// not include the Comment, since the `ssh.PublicKey` struct doesn't store
+// the comment at all. This could be inprovide by calling ssh.MarshalAuthorizedKey
+// and slicing the string, but like, that seems worse than just base64ing it.
 func keyToString(pubKey ssh.PublicKey, comment string) string {
 	return fmt.Sprintf(
 		"%s %s %s\n",
@@ -39,6 +49,44 @@ func keyToString(pubKey ssh.PublicKey, comment string) string {
 		base64.StdEncoding.EncodeToString(pubKey.Marshal()),
 		comment,
 	)
+}
+
+// GenerateAndRequestCertificate will create a very opinionated private key,
+// and return the private key handle, the public key (signed by Hallow), and
+// any error conditions that were hit during execution.
+func (c Client) GenerateAndRequestCertificate(
+	ctx context.Context,
+	comment string,
+) (crypto.Signer, ssh.PublicKey, error) {
+	l := log.WithFields(log.Fields{
+		"hallow.public_key.comment": comment,
+	})
+	pubKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		l.WithFields(log.Fields{"error": err}).Fatal("Can't generate key")
+		return nil, nil, err
+	}
+
+	sshPubKey, err := ssh.NewPublicKey(pubKey)
+	if err != nil {
+		l.WithFields(log.Fields{"error": err}).Fatal("Can't create ssh Public Key")
+		return nil, nil, err
+	}
+
+	l = l.WithFields(log.Fields{"hallow.public_key.type": sshPubKey.Type()})
+
+	sshPubKey, err = c.RequestCertificate(
+		context.TODO(),
+		sshPubKey,
+		comment,
+	)
+	if err != nil {
+		l.WithFields(log.Fields{"error": err}).Fatal("Failed to sign key")
+		return nil, nil, err
+	}
+
+	return privateKey, sshPubKey, nil
+
 }
 
 // RequestCertificate will request that the CA sign our Public Key. This
@@ -49,7 +97,13 @@ func (c Client) RequestCertificate(
 	ctx context.Context,
 	pubKey ssh.PublicKey,
 	comment string,
-) (ssh.PublicKey, string, error) {
+) (ssh.PublicKey, error) {
+	l := log.WithFields(log.Fields{
+		"hallow.public_key.comment": comment,
+		"hallow.public_key.type":    pubKey.Type(),
+		"hallow.endpoint":           c.endpoint,
+	})
+
 	signer := v4.NewSigner(c.session.Config.Credentials)
 	requestBody := keyToString(pubKey, comment)
 	req, err := http.NewRequest(
@@ -58,7 +112,8 @@ func (c Client) RequestCertificate(
 		strings.NewReader(requestBody),
 	)
 	if err != nil {
-		return nil, "", err
+		l.WithFields(log.Fields{"error": err}).Fatal("Failed to create Request")
+		return nil, err
 	}
 	header, err := signer.Presign(
 		req,
@@ -69,103 +124,47 @@ func (c Client) RequestCertificate(
 		time.Now(),
 	)
 	if err != nil {
-		return nil, "", err
+		l.WithFields(log.Fields{"error": err}).Fatal("Failed to Presign request")
+		return nil, err
 	}
 
 	req.Header = header
 	req.Body = ioutil.NopCloser(strings.NewReader(requestBody))
 	req = req.WithContext(ctx)
 
+	l.Trace("Requesting SSH Certificate")
 	response, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, "", err
+		l.WithFields(log.Fields{"error": err}).Fatal("Failed to call endpoint")
+		return nil, err
 	}
 	defer response.Body.Close()
 	if response.StatusCode != http.StatusOK {
 		responseBody, _ := ioutil.ReadAll(response.Body)
-		return nil, "", fmt.Errorf(
+		err := fmt.Errorf(
 			"HTTP error from hallow. Status=%d: %s",
 			response.StatusCode,
 			responseBody,
 		)
+		l.WithFields(log.Fields{"error": err}).Fatal("Got a non-200 exit code")
+		return nil, err
 	}
 
 	responseBody, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return nil, "", err
+		l.WithFields(log.Fields{"error": err}).Fatal("Can't read HTTP Body")
+		return nil, err
 	}
 
-	pubKey, err = ssh.ParsePublicKey(responseBody)
+	pubKey, _, _, _, err = ssh.ParseAuthorizedKey(responseBody)
 	if err != nil {
-		return nil, "", err
+		l.WithFields(log.Fields{"error": err}).Fatal("Failed to re-parse SSH pubkey")
+		return nil, err
 	}
+	l = l.WithFields(log.Fields{
+		"hallow.public_key.type": pubKey.Type(),
+	})
 
-	return pubKey, keyToString(pubKey, comment), nil
+	l.Debug("Sucessfully got an SSH Certificate")
+	return pubKey, nil
 }
-
-// // GenerateKeyAndObtainCertificate will generate an SSH private key, obtain a
-// // short-lived certificate for it from Hallow, and then return the
-// // (privateKey, certificate, error).
-// func GenerateKeyAndObainCertificate(ctx context.Context, sess *session.Session, httpClient *http.Client, hallowEndpoint string, comment string) ([]byte, []byte, error) {
-// 	pubKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
-// 	if err != nil {
-// 		return nil, nil, err
-// 	}
-//
-// 	pubKey, err := ssh.NewPublicKey(pubKey)
-// 	if err != nil {
-// 		return nil, nil, err
-// 	}
-//
-// 	signer := v4.NewSigner(sess.Config.Credentials)
-//
-// 	requestBody := fmt.Sprintf("%s %s %s\n", pubKey.Type(), base64.StdEncoding.EncodeToString(pubKey.Marshal()), comment)
-// 	req, err := http.NewRequest(
-// 		http.MethodPut,
-// 		hallowEndpoint,
-// 		strings.NewReader(requestBody),
-// 	)
-// 	if err != nil {
-// 		return nil, nil, err
-// 	}
-//
-// 	header, err := signer.Presign(
-// 		req,
-// 		strings.NewReader(requestBody),
-// 		"execute-api",
-// 		*sess.Config.Region,
-// 		2*time.Second,
-// 		time.Now(),
-// 	)
-// 	if err != nil {
-// 		return nil, nil, err
-// 	}
-//
-// 	req.Header = header
-// 	req.Body = ioutil.NopCloser(strings.NewReader(requestBody))
-// 	req = req.WithContext(ctx)
-//
-// 	response, err := httpClient.Do(req)
-// 	if err != nil {
-// 		return nil, nil, err
-// 	}
-// 	defer response.Body.Close()
-// 	if response.StatusCode != http.StatusOK {
-// 		responseBody, _ := ioutil.ReadAll(response.Body)
-// 		return nil, nil, fmt.Errorf("HTTP error from hallow. Status=%d: %s", response.StatusCode, responseBody)
-// 	}
-//
-// 	responseBody, err := ioutil.ReadAll(response.Body)
-// 	if err != nil {
-// 		return nil, nil, err
-// 	}
-//
-// 	sshPrivateKey, err := sshkeys.Marshal(privateKey, &sshkeys.MarshalOptions{
-// 		Format: sshkeys.FormatOpenSSHv1,
-// 	})
-// 	if err != nil {
-// 		return nil, nil, err
-// 	}
-//
-// 	return sshPrivateKey, responseBody, nil
-// }
