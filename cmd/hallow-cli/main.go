@@ -13,7 +13,7 @@ import (
 
 //
 func hallowClientFromCLI(c *cli.Context) client.Client {
-	return client.New(session.New(), &http.Client{}, c.String("endpoint"))
+	return client.New(session.New(), http.DefaultClient, c.String("endpoint"))
 }
 
 func main() {

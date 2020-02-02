@@ -23,7 +23,6 @@ var (
 //
 func Sign(c *cli.Context) error {
 	hallow := hallowClientFromCLI(c)
-	_ = hallow
 
 	for _, path := range c.Args().Slice() {
 		l := log.WithFields(log.Fields{"hallow.public_key.path": path})
