@@ -3,7 +3,8 @@ package client
 import (
 	"context"
 	"crypto"
-	"crypto/ed25519"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
@@ -60,13 +61,13 @@ func (c Client) GenerateAndRequestCertificate(
 	l := log.WithFields(log.Fields{
 		"hallow.public_key.comment": comment,
 	})
-	pubKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	privateKey, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	if err != nil {
 		l.WithFields(log.Fields{"error": err}).Fatal("Can't generate key")
 		return nil, nil, err
 	}
 
-	sshPubKey, err := ssh.NewPublicKey(pubKey)
+	sshPubKey, err := ssh.NewPublicKey(privateKey.Public())
 	if err != nil {
 		l.WithFields(log.Fields{"error": err}).Fatal("Can't create ssh Public Key")
 		return nil, nil, err

@@ -44,6 +44,7 @@ func main() {
 			SignCommand,
 			GetPubKeyCommand,
 			SSHCommand,
+			AgentCommand,
 		},
 	}
 	if err := app.Run(os.Args); err != nil {
