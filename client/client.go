@@ -29,10 +29,14 @@ type Client struct {
 // New creates a new Client object with the configured AWS session, HTTP
 // Client, and the Hallow API endpoint.
 func New(sess *session.Session, endpoint string) Client {
+	return NewWithHTTPClient(sess, http.DefaultClient, endpoint)
+}
+
+func NewWithHTTPClient(sess *session.Session, client *http.Client, endpoint string) Client {
 	return Client{
 		session:    sess,
 		endpoint:   endpoint,
-		httpClient: http.DefaultClient,
+		httpClient: client,
 	}
 }
 
