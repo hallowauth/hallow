@@ -5,7 +5,7 @@ Hallow is an OpenSSH Certificate Authority tightly coupled to AWS.
 ## How dos Hallow work?
 
 Hallow uses AWS IAM to authenticate incoming requests via API Gateway to
-resolve the assumed role of the requestee. The API Gateway triggers a Lambda
+resolve the IAM identity of the requestee. The API Gateway triggers a Lambda
 running Hallow, which will take the AWS IAM User ARN, and sign the provided
 SSH Public Key with an asymmetric key (either RSA or ECDSA) stored in KMS.
 
