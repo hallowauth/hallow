@@ -23,7 +23,11 @@ func SSH(c *cli.Context) error {
 
 	hallow := hallowClientFromCLI(c)
 
-	signer, sshCert, err := hallow.GenerateAndRequestCertificate(c.Context, "")
+	signer, sshCert, err := hallow.GenerateAndRequestCertificate(
+		c.Context,
+		client.KeyTypeED25519,
+		"",
+	)
 	if err != nil {
 		return err
 	}

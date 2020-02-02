@@ -17,13 +17,25 @@ var (
 		Action: Agent,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  "comment",
+				Name:  "key-id",
 				Value: "hallow",
+				Usage: "KeyID to use for the SSH Certificate",
 			},
 			&cli.StringFlag{
 				Name:    "ssh-auth-sock",
+				Usage:   "Path to the ssh agent socket",
 				EnvVars: []string{"SSH_AUTH_SOCK"},
 				Value:   "",
+			},
+			&cli.StringFlag{
+				Name:  "key-type",
+				Usage: "Key type to generate [ecdsa|ed25519]",
+				Value: "ecdsa",
+			},
+			&cli.IntFlag{
+				Name:  "key-bits",
+				Usage: "for ecdsa, this will select curve sizes [256|384|521]",
+				Value: 384,
 			},
 		},
 	}
@@ -32,44 +44,58 @@ var (
 //
 func Agent(c *cli.Context) error {
 	hallow := hallowClientFromCLI(c)
-	_ = hallow
 
-	socket := os.Getenv("SSH_AUTH_SOCK")
-	conn, err := net.Dial("unix", socket)
+	keyType, err := keyTypeFromCLI(c)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"ssh_auth_sock": socket,
-			"error":         err,
+			"error": err,
+		}).Warn("failed to resolve generated key type")
+		return err
+	}
+	l := log.WithFields(log.Fields{
+		"hallow-cli.key_type": keyType,
+	})
+	l.Trace("got key type")
+
+	socket := os.Getenv("SSH_AUTH_SOCK")
+	l = l.WithFields(log.Fields{"ssh_auth_sock": socket})
+	conn, err := net.Dial("unix", socket)
+	if err != nil {
+		l.WithFields(log.Fields{
+			"error": err,
 		}).Warn("failed to open SSH_AUTH_SOCK")
 		return err
 	}
 
 	agentClient := agent.NewClient(conn)
+	l.Trace("opened agent connection")
 
-	comment := c.String("comment")
-
+	keyId := c.String("key-id")
 	privKey, pubKey, err := hallow.GenerateAndRequestCertificate(
 		c.Context,
-		comment,
+		keyType,
+		keyId,
 	)
 	if err != nil {
-		log.WithFields(log.Fields{
+		l.WithFields(log.Fields{
 			"error": err,
 		}).Warn("failed to request Certificate")
 		return err
 	}
-	log.Debug("Certificate was signed by Hallow")
 
 	cert := pubKey.(*ssh.Certificate)
+	l = l.WithFields(log.Fields{
+		"hellow-cli.certificate.principals": cert.ValidPrincipals,
+	})
+	l.Debug("Certificate was signed by Hallow")
 
 	if err := agentClient.Add(agent.AddedKey{
 		PrivateKey:  privKey,
 		Certificate: cert,
-		Comment:     comment,
+		Comment:     keyId,
 	}); err != nil {
-		log.WithFields(log.Fields{
-			"ssh_auth_sock": socket,
-			"error":         err,
+		l.WithFields(log.Fields{
+			"error": err,
 		}).Warn("failed to add Certifciate to agent")
 		return err
 	}

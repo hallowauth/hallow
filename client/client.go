@@ -3,8 +3,6 @@ package client
 import (
 	"context"
 	"crypto"
-	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
@@ -56,18 +54,20 @@ func keyToString(pubKey ssh.PublicKey, comment string) string {
 // any error conditions that were hit during execution.
 func (c Client) GenerateAndRequestCertificate(
 	ctx context.Context,
+	keyType KeyType,
 	comment string,
 ) (crypto.Signer, ssh.PublicKey, error) {
 	l := log.WithFields(log.Fields{
 		"hallow.public_key.comment": comment,
 	})
-	privateKey, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+
+	privKey, pubKey, err := generateKey(rand.Reader, keyType)
 	if err != nil {
 		l.WithFields(log.Fields{"error": err}).Fatal("Can't generate key")
 		return nil, nil, err
 	}
 
-	sshPubKey, err := ssh.NewPublicKey(privateKey.Public())
+	sshPubKey, err := ssh.NewPublicKey(pubKey)
 	if err != nil {
 		l.WithFields(log.Fields{"error": err}).Fatal("Can't create ssh Public Key")
 		return nil, nil, err
@@ -85,7 +85,7 @@ func (c Client) GenerateAndRequestCertificate(
 		return nil, nil, err
 	}
 
-	return privateKey, sshPubKey, nil
+	return privKey, sshPubKey, nil
 
 }
 
