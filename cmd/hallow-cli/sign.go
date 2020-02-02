@@ -5,8 +5,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/urfave/cli/v2"
 	"golang.org/x/crypto/ssh"
@@ -26,15 +24,7 @@ func Sign(c *cli.Context) error {
 
 	for _, path := range c.Args().Slice() {
 		l := log.WithFields(log.Fields{"hallow.public_key.path": path})
-
-		dirname := filepath.Dir(path)
-		basename := filepath.Base(path)
-		if !strings.HasSuffix(basename, ".pub") {
-			l.Warn("filepath doesn't end in .pub")
-			return fmt.Errorf("hallow-cli: '%s' does not end with .pub", path)
-		}
-		certName := fmt.Sprintf("%s-cert.pub", basename[:len(basename)-4])
-		certPath := filepath.Join(dirname, certName)
+		certPath := fmt.Sprintf("%s-cert", path)
 
 		l.Debug("Opening public key")
 		fd, err := os.Open(path)
