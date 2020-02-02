@@ -17,7 +17,7 @@ var (
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "key-id",
-				Value: "hallow",
+				Value: client.DefaultComment(),
 				Usage: "KeyID to use for the SSH Certificate",
 			},
 		},
