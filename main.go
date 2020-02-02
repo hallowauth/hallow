@@ -82,6 +82,15 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 		ValidBefore:     uint64(time.Now().Add(c.certAge).Unix()),
 	}
 
+	template.Permissions.CriticalOptions = map[string]string{}
+	template.Permissions.Extensions = map[string]string{
+		// "permit-X11-forwarding":   "",
+		"permit-agent-forwarding": "",
+		"permit-port-forwarding":  "",
+		"permit-pty":              "",
+		"permit-user-rc":          "",
+	}
+
 	sshCert, _, err := c.ca.SignAndParse(template)
 	if err != nil {
 		l.WithFields(log.Fields{"error": err}).Warn("The CA can't sign the Certificate")
