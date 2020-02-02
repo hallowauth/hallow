@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"crypto"
-	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
@@ -55,12 +54,14 @@ func keyToString(pubKey ssh.PublicKey, comment string) string {
 // any error conditions that were hit during execution.
 func (c Client) GenerateAndRequestCertificate(
 	ctx context.Context,
+	keyType KeyType,
 	comment string,
 ) (crypto.Signer, ssh.PublicKey, error) {
 	l := log.WithFields(log.Fields{
 		"hallow.public_key.comment": comment,
 	})
-	pubKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+
+	privKey, pubKey, err := generateKey(rand.Reader, keyType)
 	if err != nil {
 		l.WithFields(log.Fields{"error": err}).Fatal("Can't generate key")
 		return nil, nil, err
@@ -84,7 +85,7 @@ func (c Client) GenerateAndRequestCertificate(
 		return nil, nil, err
 	}
 
-	return privateKey, sshPubKey, nil
+	return privKey, sshPubKey, nil
 
 }
 

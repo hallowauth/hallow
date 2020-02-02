@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"os"
@@ -14,6 +15,26 @@ import (
 //
 func hallowClientFromCLI(c *cli.Context) client.Client {
 	return client.New(session.New(), http.DefaultClient, c.String("endpoint"))
+}
+
+//
+func keyTypeFromCLI(c *cli.Context) (client.KeyType, error) {
+	switch c.String("key-type") {
+	case "ecdsa256":
+		return client.KeyTypeECDSAP256, nil
+	case "ecdsa384":
+		return client.KeyTypeECDSAP384, nil
+	case "ecdsa521":
+		return client.KeyTypeECDSAP521, nil
+	case "rsa2048":
+		return client.KeyTypeRSA2048, nil
+	case "rsa4096":
+		return client.KeyTypeRSA4096, nil
+	case "ed25519":
+		return client.KeyTypeED25519, nil
+	default:
+		return 0, fmt.Errorf("hallow-cli: unknown key type")
+	}
 }
 
 func main() {
@@ -44,6 +65,7 @@ func main() {
 			SignCommand,
 			GetPubKeyCommand,
 			SSHCommand,
+			AgentCommand,
 		},
 	}
 	if err := app.Run(os.Args); err != nil {
