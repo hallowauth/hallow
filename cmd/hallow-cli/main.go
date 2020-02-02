@@ -43,6 +43,7 @@ func main() {
 		Commands: []*cli.Command{
 			SignCommand,
 			GetPubKeyCommand,
+			SSHCommand,
 		},
 	}
 	if err := app.Run(os.Args); err != nil {
