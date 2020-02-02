@@ -5,7 +5,7 @@ all: hallow.zip
 clean:
 	rm -vf hallow.zip hallow
 
-hallow:
+hallow: *.go
 	go build -o hallow .
 
 hallow.zip: hallow
