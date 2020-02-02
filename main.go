@@ -83,7 +83,6 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 		Permissions: ssh.Permissions{
 			CriticalOptions: map[string]string{},
 			Extensions: map[string]string{
-				// "permit-X11-forwarding":   "",
 				"permit-agent-forwarding": "",
 				"permit-port-forwarding":  "",
 				"permit-pty":              "",
