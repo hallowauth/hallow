@@ -26,7 +26,8 @@ names are removed from `assumed-role` ARNs.
 The easiest way to deploy Hallow is with the Terraform module provided in the
 `terraform/` directory. It will deploy all the AWS resources required for
 Hallow to work. Note that you will need to build `hallow` and create a
-`hallow.zip` and place it in S3.
+`hallow.zip` and place it in S3 (pre-built binaries are also available from
+Github Actions).
 
 ## What do I need to do to my system to trust Hallow?
 
