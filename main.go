@@ -64,7 +64,6 @@ func createPrincipalName(userArn arn.ARN) (string, error) {
 		default:
 			return "", fmt.Errorf("hallow: unsupported sts resource type")
 		}
-		return "", nil
 	case "iam":
 		// for IAM, we can have a few formats, but all are deterministic
 		// and stable.
