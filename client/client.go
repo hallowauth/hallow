@@ -37,7 +37,7 @@ func New(sess *session.Session, client *http.Client, endpoint string) Client {
 	}
 }
 
-// We need to expose keyToString because `ssh.MarshalAuthorizedKey` will
+// We need to implement keyToString because `ssh.MarshalAuthorizedKey` will
 // not include the Comment, since the `ssh.PublicKey` struct doesn't store
 // the comment at all. This could be inprovide by calling ssh.MarshalAuthorizedKey
 // and slicing the string, but like, that seems worse than just base64ing it.
