@@ -35,8 +35,6 @@ func generateKey(rand io.Reader, keyType KeyType) (crypto.Signer, crypto.PublicK
 			curve = elliptic.P384()
 		case KeyTypeECDSAP521:
 			curve = elliptic.P521()
-		default:
-			return nil, nil, fmt.Errorf("hallow/client: unknown ecdsa curve")
 		}
 		privKey, err := ecdsa.GenerateKey(curve, rand)
 		if err != nil {
@@ -50,8 +48,6 @@ func generateKey(rand io.Reader, keyType KeyType) (crypto.Signer, crypto.PublicK
 			size = 2048
 		case KeyTypeRSA4096:
 			size = 4096
-		default:
-			return nil, nil, fmt.Errorf("hallow/client: unknown rsa size")
 		}
 		privKey, err := rsa.GenerateKey(rand, size)
 		if err != nil {
