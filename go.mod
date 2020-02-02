@@ -1,5 +1,7 @@
 module github.com/hallowauth/hallow
 
+go 1.13
+
 require (
 	github.com/ScaleFT/sshkeys v0.0.0-20181112160850-82451a803681
 	github.com/aws/aws-lambda-go v1.13.3
