@@ -3,6 +3,8 @@ package client
 import (
 	"crypto"
 	"io/ioutil"
+	"os"
+	"os/user"
 
 	"github.com/ScaleFT/sshkeys"
 	"golang.org/x/crypto/ssh"
@@ -30,5 +32,18 @@ func SSHCLI(signer crypto.Signer, sshCert ssh.PublicKey, server string) ([]strin
 		return nil, err
 	}
 
-	return []string{"ssh", "-i", tmpdir, server}, nil
+	return []string{"ssh", "-i", tmpdir + "/id", server}, nil
+}
+
+func DefaultComment() string {
+	u, err := user.Current()
+	if err != nil {
+		return "hallow"
+	}
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		return u.Username
+	}
+	return u.Username + "@" + hostname
 }

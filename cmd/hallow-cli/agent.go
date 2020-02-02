@@ -8,6 +8,8 @@ import (
 	"github.com/urfave/cli/v2"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
+
+	"github.com/hallowauth/hallow/client"
 )
 
 var (
@@ -18,7 +20,7 @@ var (
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:  "key-id",
-				Value: "hallow",
+				Value: client.DefaultComment(),
 				Usage: "KeyID to use for the SSH Certificate",
 			},
 			&cli.StringFlag{
