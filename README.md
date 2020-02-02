@@ -9,7 +9,18 @@ resolve the IAM identity of the requestee. The API Gateway triggers a Lambda
 running Hallow, which will take the AWS IAM User ARN, and sign the provided
 SSH Public Key with an asymmetric key (either RSA or ECDSA) stored in KMS.
 
-Hallow will set the Principal to the User ARN of the incoming request.
+
+## What does it use as the SSH Principal?
+
+Hallow will set the Principal to the User ARN of the incoming request. In
+most cases, this means that your User ARN in AWS that was used to hit the
+API endpoint will match the principal name in the Certificate.
+
+The only exception is an `sts` `assumed-role` ARN. The Session Name (the last
+part of the ARN) is user-controlled, and usually set to something helpful
+(like the username of the person assuming the role, or the `i-*` instance ID),
+but is not significant, or any assertion of identity. As a result, session
+names are removed from `assumed-role` ARNs.
 
 ## What do I need to do to my system to trust Hallow?
 
