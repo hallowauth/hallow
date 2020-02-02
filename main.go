@@ -50,16 +50,16 @@ type config struct {
 func createPrincipalName(userArn arn.ARN) (string, error) {
 	switch userArn.Service {
 	case "sts":
-		chonks := strings.Split(userArn.Resource, "/")
-		if len(chonks) == 0 {
+		chunks := strings.Split(userArn.Resource, "/")
+		if len(chunks) == 0 {
 			return "", fmt.Errorf("hallow: user arn resource is missing")
 		}
-		switch chonks[0] {
+		switch chunks[0] {
 		case "assumed-role":
-			if len(chonks) != 3 {
+			if len(chunks) != 3 {
 				return "", fmt.Errorf("hallow: malformed assumed-role resource")
 			}
-			userArn.Resource = fmt.Sprintf("%s/%s", chonks[0], chonks[1])
+			userArn.Resource = fmt.Sprintf("%s/%s", chunks[0], chunks[1])
 			return userArn.String(), nil
 		default:
 			return "", fmt.Errorf("hallow: unsupported sts resource type")
