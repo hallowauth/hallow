@@ -14,3 +14,4 @@ resources for running Hallow.
 - `request_certificate_policy_arn`: An IAM policy which may be granted to users
   or roles, giving them the ability to request certificates from Hallow
 - `hallow_endpoint`: URL to make requests to in order to obtain certificates
+- `ssh_ca_key_arn`: ARN for the KMS key for the SSH CA

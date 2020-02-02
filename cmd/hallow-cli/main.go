@@ -12,6 +12,7 @@ func main() {
 		Usage: "talk to the hallow server",
 		Commands: []*cli.Command{
 			SignCommand,
+			GetPubKeyCommand,
 		},
 	}
 	if err := app.Run(os.Args); err != nil {
