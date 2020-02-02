@@ -26,7 +26,7 @@ AuthorizedPrincipalsFile=/path/to/user-files/%u
 format, seperated by newlines. This file should contain Hallow's KMS
 Public Key in SSH format.
 
-`AuthorizedPrincipalsFile` is a list ofo principals that are allowed to
+`AuthorizedPrincipalsFile` is a list of principals that are allowed to
 access the particular user that is being logged into. `%u` means the requested
 user, so it's a good idea to keep a directory full of files named after
 users of the system. Hallow will set the principal of the Certificate to
