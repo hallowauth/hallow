@@ -34,7 +34,7 @@ type kmsSigner struct {
 //
 // When New is invoked, New will fetch the PublicKey from the KMS, and
 // create a crypto.Signer that's able to preform the signing operations
-// using the corresponding KMS blinded private key.
+// using the corresponding KMS private key.
 //
 // The returned crypto.Signer is an internal type, and contains no
 // methods or exported fields beyond those required from the crypto.Signer
