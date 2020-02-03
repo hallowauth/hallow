@@ -96,7 +96,7 @@ this will be used to configure the SSH daemon.
 
 ```
 $ aws sts get-caller-identity --query="Arn"
-    "Arn": "arn:aws:iam::.......:root"
+"arn:aws:iam::.......:root"
 ```
 
 #### Remind ourselves of the SSH CA Public Key
