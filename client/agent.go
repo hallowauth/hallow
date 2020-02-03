@@ -41,7 +41,8 @@ func (c Client) GetOrGenerateFromAgent(
 
 	// Maybe not the best semantics.
 	if len(certs) > 0 {
-		log.Trace("found certs from my upstream, returning!")
+		cert := certs[0]
+		logWithCertificate(cert).Debug("Using existing Certificate")
 		return certs[0], nil
 	}
 
@@ -53,6 +54,8 @@ func (c Client) GetOrGenerateFromAgent(
 		}).Warn("failed to generate and request from hallow")
 		return nil, err
 	}
+
+	logWithCertificate(pub.(*ssh.Certificate)).Debug("Got a new Certificate")
 
 	return pub, addCertificateToAgent(
 		agentClient,
@@ -71,20 +74,23 @@ func addCertificateToAgent(
 ) error {
 	lifetime := int64(cert.ValidBefore) - time.Now().Unix()
 
+	l := logWithCertificate(cert).WithFields(log.Fields{
+		"agent.lifetime_secs": lifetime,
+	})
+
 	if err := agentClient.Add(agent.AddedKey{
 		PrivateKey:   privKey,
 		Certificate:  cert,
 		LifetimeSecs: uint32(lifetime),
 		Comment:      keyId,
 	}); err != nil {
-		log.WithFields(log.Fields{
+		l.WithFields(log.Fields{
 			"error": err,
 		}).Warn("failed to add Certifciate to agent")
 		return err
 	}
-	log.WithFields(log.Fields{
-		"agent.lifetime_secs": lifetime,
-	}).Trace("certificate added to agent")
+
+	l.Trace("certificate added to ssh-agent")
 	return nil
 }
 
@@ -125,13 +131,17 @@ func (c Client) ListCertificatesFromAgent(
 			continue
 		}
 
+		l := logWithCertificate(cert)
+
 		host, ok := cert.Extensions["hallow-host@dc.cant.vote"]
 		if !ok {
+			l.Trace("not a hallow certificate, moving on")
 			// not a hallowed Certificate
 			continue
 		}
 
 		if host != uri.Host {
+			l.Trace("not a hallow certificate issued by our target host, moving on")
 			// not our host
 			continue
 		}
@@ -142,9 +152,11 @@ func (c Client) ListCertificatesFromAgent(
 		if now.After(validBefore) && now.Before(validAfter) {
 			// We're either before or after the validity duration of
 			// this Certificate.
+			l.Info("ignoring expired cert!")
 			continue
 		}
 
+		l.Trace("valid certificate found")
 		ret = append(ret, cert)
 	}
 
