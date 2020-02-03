@@ -40,6 +40,11 @@ func main() {
 	app := &cli.App{
 		Name:  "hallow-cli",
 		Usage: "talk to the hallow server",
+		Description: `hallow-cli is the refrence program to talk to a hallow endpoint.
+
+   This program contains a number of helpers that are handy when operating or
+   interacting with a hallow server, without having to build all the tooling
+   to talk to that endpoint yourself.`,
 		Before: func(c *cli.Context) error {
 			level, err := log.ParseLevel(c.String("log-level"))
 			if err != nil {
@@ -65,6 +70,10 @@ func main() {
 			GetPubKeyCommand,
 			SSHCommand,
 			AgentCommand,
+		},
+		Authors: []*cli.Author{
+			&cli.Author{Name: "Alex Gaynor"},
+			&cli.Author{Name: "Paul Tagliamonte"},
 		},
 	}
 	if err := app.Run(os.Args); err != nil {
