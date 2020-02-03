@@ -5,7 +5,6 @@ import (
 	"crypto"
 	log "github.com/sirupsen/logrus"
 	"net/url"
-	"strings"
 	"time"
 
 	"golang.org/x/crypto/ssh"
@@ -132,7 +131,7 @@ func (c Client) ListCertificatesFromAgent(
 			continue
 		}
 
-		if strings.Compare(host, uri.Host) != 0 {
+		if host != uri.Host {
 			// not our host
 			continue
 		}
