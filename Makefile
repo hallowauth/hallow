@@ -6,7 +6,7 @@ clean:
 	rm -vf hallow.zip hallow
 
 hallow: *.go
-	go build -o hallow .
+	CGO_ENABLED=0 go build -o hallow .
 
 hallow.zip: hallow
 	zip hallow.zip hallow
