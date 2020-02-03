@@ -165,10 +165,7 @@ func (c Client) RequestCertificate(
 		l.WithFields(log.Fields{"error": err}).Fatal("Failed to re-parse SSH pubkey")
 		return nil, err
 	}
-	l = l.WithFields(log.Fields{
-		"hallow.public_key.type": pubKey.Type(),
-	})
 
-	l.Debug("Sucessfully got an SSH Certificate")
+	logWithCertificate(pubKey.(*ssh.Certificate)).Debug("Sucessfully got an SSH Certificate")
 	return pubKey, nil
 }
