@@ -82,6 +82,15 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 		}, nil
 	}
 
+	host, ok := event.Headers["Host"]
+	if !ok {
+		log.Warn("Host header is not present!")
+		return events.APIGatewayProxyResponse{
+			Body:       "Malformed request",
+			StatusCode: 400,
+		}, nil
+	}
+
 	principal, err := createPrincipalName(userArn)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Warn("Incoming ARN isn't a valid principal")
@@ -137,10 +146,11 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 		Permissions: ssh.Permissions{
 			CriticalOptions: map[string]string{},
 			Extensions: map[string]string{
-				"permit-agent-forwarding": "",
-				"permit-port-forwarding":  "",
-				"permit-pty":              "",
-				"permit-user-rc":          "",
+				"permit-agent-forwarding":  "",
+				"permit-port-forwarding":   "",
+				"permit-pty":               "",
+				"permit-user-rc":           "",
+				"hallow-host@dc.cant.vote": host,
 			},
 		},
 	}
