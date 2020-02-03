@@ -18,7 +18,7 @@ jobs:
         uses: actions/setup-go@v1
         with:
           go-version: ${{ matrix.go }}
-      - run: go build
+      - run: make hallow
       - run: go vet ./...
       - run: |
           output=$(go fmt ./...)
@@ -32,7 +32,7 @@ jobs:
           git --no-pager diff --quiet go.mod go.sum
       # When we have multiple items in our build matrix, make these only run
       # on one of them.
-      - run: zip hallow.zip hallow
+      - run: make hallow.zip
       - uses: actions/upload-artifact@v1
         with:
           name: hallow.zip
