@@ -129,7 +129,7 @@ users we would like to grant access to:
 
 ```
 [user@remote-computer]$ sudo mkdir /etc/ssh/principals/
-[user@remote-computer]$ sudo echo arn::aws::iam::..........:root > /etc/ssh/principals/user
+[user@remote-computer]$ sudo echo arn::aws::iam::..........:root > /etc/ssh/principals/${USER}
 ```
 
 Finally, let's reboot ssh, and *keep this terminal open!*. If something goes
