@@ -44,7 +44,7 @@ export HALLOW_ENDPOINT=https://UNIQUE_ID.execute-api.REGION.amazonaws.com/prod/h
 If you've never used ssh certificates before, there should be no keys
 when you run `ssh-add -L | grep cert`. If there are keys, you likely know
 how to debug the following steps on your own. If you don't feel OK debugging
-your ssh-agent, feel free to continue with the commands and if no breakage
+your `ssh-agent`, feel free to continue with the commands and if no breakage
 is apparent, assuming things are working until proven otherwise.
 
 If this fails, you may not have Invoke permissions on the API Gateway. You
