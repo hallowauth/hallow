@@ -1,4 +1,4 @@
-# Hellow Quickstart
+# Hallow Quickstart
 
 This guide is partially complete. If you are following this guide, please
 contribute information on any places where you've gotten stuck and how
