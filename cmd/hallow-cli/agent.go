@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/urfave/cli/v2"
-	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 
 	"github.com/hallowauth/hallow/client"
@@ -68,32 +67,16 @@ func Agent(c *cli.Context) error {
 	l.Trace("opened agent connection")
 
 	keyId := c.String("key-id")
-	privKey, pubKey, err := hallow.GenerateAndRequestCertificate(
+	_, err = hallow.GetOrGenerateFromAgent(
 		c.Context,
+		agentClient,
 		keyType,
 		keyId,
 	)
 	if err != nil {
 		l.WithFields(log.Fields{
 			"error": err,
-		}).Warn("failed to request Certificate")
-		return err
-	}
-
-	cert := pubKey.(*ssh.Certificate)
-	l = l.WithFields(log.Fields{
-		"hellow-cli.certificate.principals": cert.ValidPrincipals,
-	})
-	l.Debug("Certificate was signed by Hallow")
-
-	if err := agentClient.Add(agent.AddedKey{
-		PrivateKey:  privKey,
-		Certificate: cert,
-		Comment:     keyId,
-	}); err != nil {
-		l.WithFields(log.Fields{
-			"error": err,
-		}).Warn("failed to add Certifciate to agent")
+		}).Warn("failed to get or create certificate")
 		return err
 	}
 
