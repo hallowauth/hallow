@@ -1,4 +1,4 @@
-# Hellow Quickstart
+# Hallow Quickstart
 
 This guide is partially complete. If you are following this guide, please
 contribute information on any places where you've gotten stuck and how
@@ -11,7 +11,7 @@ computer to talk to the AWS API.
 
 ## Push Hallow deployment zip to S3
 
-Pull the latest Hallow zip from GitHub actions, or build your own zip using
+Pull the latest Hallow zip from [GitHub Actions](https://github.com/hallowauth/hallow/actions?query=branch%3Amaster+event%3Apush), or build your own zip using
 `make`, and put that zip in an S3 bucket. When running Terraform, you will
 need the bucket name, as well as the name of the file (should be `hallow.zip`).
 
@@ -47,7 +47,7 @@ export HALLOW_ENDPOINT=https://UNIQUE_ID.execute-api.REGION.amazonaws.com/prod/h
 If you've never used ssh certificates before, there should be no keys
 when you run `ssh-add -L | grep cert`. If there are keys, you likely know
 how to debug the following steps on your own. If you don't feel OK debugging
-your ssh-agent, feel free to continue with the commands and if no breakage
+your `ssh-agent`, feel free to continue with the commands and if no breakage
 is apparent, assuming things are working until proven otherwise.
 
 If this fails, you may not have Invoke permissions on the API Gateway. You
@@ -95,7 +95,7 @@ we are, to figure out who Hallow will think we are. Keep a note of this ARN,
 this will be used to configure the SSH daemon.
 
 ```
-$ aws sts get-caller-identity | grep Arn
+$ aws sts get-caller-identity --query="Arn"
     "Arn": "arn:aws:iam::.......:root"
 ```
 
@@ -132,7 +132,7 @@ users we would like to grant access to:
 
 ```
 [user@remote-computer]$ sudo mkdir /etc/ssh/principals/
-[user@remote-computer]$ sudo echo arn::aws::iam::..........:root > /etc/ssh/principals/user
+[user@remote-computer]$ sudo echo arn::aws::iam::..........:root > /etc/ssh/principals/${USER}
 ```
 
 Finally, let's reboot ssh, and *keep this terminal open!*. If something goes
