@@ -25,6 +25,9 @@ cd terraform
 terraform apply
 ```
 
+*This works entirely by accident, for production deployments you'll probably
+want to instantiate this as a module.*
+
 In the output of `terraform apply`, you'll get a number of outputs, including
 the `ARN` of the `KMS` CA key, and the endpoint.
 
