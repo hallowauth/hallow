@@ -92,7 +92,7 @@ we are, to figure out who Hallow will think we are. Keep a note of this ARN,
 this will be used to configure the SSH daemon.
 
 ```
-$ aws sts get-caller-identity | grep Arn
+$ aws sts get-caller-identity --query="Arn"
     "Arn": "arn:aws:iam::.......:root"
 ```
 
