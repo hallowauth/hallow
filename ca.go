@@ -86,7 +86,7 @@ func CreateCertificate(
 		},
 	}
 
-	err = cert.SignCert(rand, priv)
+	err := cert.SignCert(rand, priv)
 	if err != nil {
 		return nil, err
 	}
