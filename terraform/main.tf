@@ -29,13 +29,10 @@ resource "aws_iam_role_policy" "lambda_role_policy" {
 data "aws_iam_policy_document" "lambda_policy" {
   statement {
     actions = [
-      "logs:CreateLogGroup",
       "logs:CreateLogStream",
       "logs:PutLogEvents"
     ]
-    // TODO: This should restrict these actions to only the correct log
-    // group.
-    resources = ["*"]
+    resources = ["arn:aws:logs:*:*:log-group:${aws_cloudwatch_log_group.log_group.name}:*"]
   }
 
   statement {
@@ -45,6 +42,12 @@ data "aws_iam_policy_document" "lambda_policy" {
     ]
     resources = [aws_kms_key.ssh_ca_key.arn]
   }
+}
+
+resource "aws_cloudwatch_log_group" "log_group" {
+  // Magic name! Lambda is hard coded to which group it logs to, we pre-creat
+  // that to be able to reference in the IAM policy.
+  name = "/aws/lambda/hallow"
 }
 
 resource "aws_lambda_function" "hallow_lambda" {
@@ -60,6 +63,8 @@ resource "aws_lambda_function" "hallow_lambda" {
       HALLOW_KMS_KEY_ARN = aws_kms_key.ssh_ca_key.arn,
     }
   }
+
+  depends_on = [aws_cloudwatch_log_group.log_group]
 }
 
 resource "aws_api_gateway_rest_api" "hallow_api_gateway" {
