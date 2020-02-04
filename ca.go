@@ -62,15 +62,6 @@ func New(rand io.Reader, priv crypto.Signer) (*CA, error) {
 	}, nil
 }
 
-// Generate 32 bytes of entropy from the given rand source.
-func generateNonce32(rand io.Reader) ([]byte, error) {
-	var b [32]byte
-	if _, err := rand.Read(b[:]); err != nil {
-		return nil, err
-	}
-	return b[:], nil
-}
-
 // Create a Certificate. This signature looks similar to the
 // x509.CreateCertificate signature for ease of use.
 func CreateCertificate(
@@ -80,13 +71,7 @@ func CreateCertificate(
 	pub ssh.PublicKey,
 	priv ssh.Signer,
 ) ([]byte, error) {
-	nonce, err := generateNonce32(rand)
-	if err != nil {
-		return nil, err
-	}
-
 	cert := ssh.Certificate{
-		Nonce:           nonce,
 		Key:             pub,
 		Serial:          template.Serial,
 		CertType:        template.CertType,
