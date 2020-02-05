@@ -21,6 +21,12 @@ part of the ARN) is user-controlled, and usually set to something helpful
 but is not significant, or any assertion of identity. As a result, session
 names are removed from `assumed-role` ARNs.
 
+If you are using Assumed Roles, it is important to note that the principal in
+your certificate will be of the form
+`arn:aws:sts::{account_id}:assumed-role/{role_name}`. It will _not_ be the ARN
+for the role itself (which is of the form
+`arn:aws:iam::{account_id}:role/{role_name}`).
+
 ## Deploying Hallow
 
 The easiest way to deploy Hallow is with the Terraform module provided in the
