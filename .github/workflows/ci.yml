@@ -26,10 +26,6 @@ jobs:
             printf "The following files are not go formatted:\n%s\n" "$output"
             exit 1
           fi
-      - run: |
-          go mod tidy -v
-          git --no-pager diff go.mod go.sum
-          git --no-pager diff --quiet go.mod go.sum
       # When we have multiple items in our build matrix, make these only run
       # on one of them.
       - run: make hallow.zip
