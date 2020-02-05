@@ -15,7 +15,7 @@ import (
 func SSHCLI(signer crypto.Signer, sshCert ssh.PublicKey, server string) ([]string, error) {
 	keyFormat := sshkeys.FormatClassicPEM
 	if _, ok := signer.(ed25519.PrivateKey); ok {
-		keyFormat = sshkeys.FormatClassicPEM
+		keyFormat = sshkeys.FormatOpenSSHv1
 	}
 
 	privKeyBytes, err := sshkeys.Marshal(signer, &sshkeys.MarshalOptions{
