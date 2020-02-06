@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"crypto"
+	"errors"
 	log "github.com/sirupsen/logrus"
 	"net/url"
 	"time"
@@ -57,7 +58,7 @@ func (c Client) GetOrGenerateFromAgent(
 
 	logWithCertificate(pub.(*ssh.Certificate)).Debug("Got a new Certificate")
 
-	return pub, addCertificateToAgent(
+	return pub, c.addCertificateToAgent(
 		agentClient,
 		priv,
 		pub.(*ssh.Certificate),
@@ -66,7 +67,7 @@ func (c Client) GetOrGenerateFromAgent(
 }
 
 // Handle the actual addition of the key to the agent.
-func addCertificateToAgent(
+func (c Client) addCertificateToAgent(
 	agentClient agent.Agent,
 	privKey crypto.Signer,
 	cert *ssh.Certificate,
@@ -89,9 +90,39 @@ func addCertificateToAgent(
 		}).Warn("failed to add Certifciate to agent")
 		return err
 	}
+	l.Trace("generated key & certificate added to ssh-agent")
 
-	l.Trace("certificate added to ssh-agent")
-	return nil
+	certs, err := c.ListCertificatesFromAgent(agentClient)
+	if err != nil {
+		return err
+	}
+
+	for _, foundCert := range certs {
+		if foundCert.Serial == cert.Serial {
+			// ListCertificatesFromAgent will find all active Certificates
+			// from our upstream, so if we find a Serial that matches, we have
+			// a matching cert! We should likely do something more fancy,
+			// like checking that the key material matches or something, but
+			// the chances of this backfiring are kinda minimal.
+			return nil
+		}
+	}
+
+	// If we haven't seen our Certificate via the ssh-agent, we'll force
+	// the error back to the caller.
+
+	l.Warn(`Certificate was not added to the running agent! Some non ssh-agent
+agents don't support Certificates. If you're running one of the following agents
+you should consider another method to add your Hallow Certificate to your
+agent, or use another Hallow call, such as 'sign' to manage your Certificates.
+
+Agents known to not work with Certificates:
+
+  - gpg-agent
+
+If you're not running one of these agents, or running ssh-agent, consider
+filing a bug at https://github.com/hallowauth/hallow`)
+	return errors.New("hallow: addCertificateToAgent did not add the Certificate to the agent!")
 }
 
 // ListCertificatesFromAgent will find all active ssh.Certificate entries in the
