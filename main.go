@@ -2,13 +2,17 @@ package main
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/binary"
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"strings"
 	"time"
+
+	"crypto/ecdsa"
+	"crypto/ed25519"
+	"crypto/rand"
+	"crypto/rsa"
 
 	"golang.org/x/crypto/ssh"
 
@@ -20,6 +24,15 @@ import (
 
 	"github.com/hallowauth/hallow/kmssigner"
 )
+
+var defaultAllowedKeyTypes = []string{
+	ssh.KeyAlgoED25519,
+	ssh.KeyAlgoECDSA521,
+	ssh.KeyAlgoECDSA384,
+	ssh.KeyAlgoECDSA256,
+	ssh.KeyAlgoSKED25519,
+	ssh.KeyAlgoSKECDSA256,
+}
 
 func stringSliceContains(s string, v []string) bool {
 	for _, x := range v {
@@ -72,6 +85,28 @@ func createPrincipalName(userArn arn.ARN) (string, error) {
 	}
 }
 
+func (c *config) validatePublicKey(sshPubKey ssh.PublicKey) error {
+	_, ok := sshPubKey.(ssh.CryptoPublicKey)
+	if !ok {
+		return fmt.Errorf("hallow: ssh public key is not a CryptoPublicKey")
+	}
+
+	pubKey := sshPubKey.(ssh.CryptoPublicKey).CryptoPublicKey()
+
+	switch pubKey.(type) {
+	case *rsa.PublicKey:
+		smallestAcceptedSize := 2048
+		if pubKey.(*rsa.PublicKey).N.BitLen() < smallestAcceptedSize {
+			return fmt.Errorf("hallow: rsa: key size is too small")
+		}
+		return nil
+	case *ecdsa.PublicKey, *ed25519.PublicKey:
+		return nil
+	default:
+		return fmt.Errorf("hallow: public key is of an unknown type, can't validate")
+	}
+}
+
 func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	userArn, err := arn.Parse(event.RequestContext.Identity.UserArn)
 	if err != nil {
@@ -119,6 +154,17 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 			"hallow.allowed_key_types": c.allowedKeyTypes,
 			"error":                    err,
 		}).Warn("Incoming SSH key is not the right type")
+		return events.APIGatewayProxyResponse{
+			Body:       "Malformed request",
+			StatusCode: 400,
+		}, nil
+	}
+
+	if err := c.validatePublicKey(publicKey); err != nil {
+		l.WithFields(log.Fields{
+			"hallow.allowed_key_types": c.allowedKeyTypes,
+			"error":                    err,
+		}).Warn("Key failed public key validation checks")
 		return events.APIGatewayProxyResponse{
 			Body:       "Malformed request",
 			StatusCode: 400,
@@ -185,6 +231,16 @@ func main() {
 		panic(err)
 	}
 
+	allowedKeyTypes := defaultAllowedKeyTypes
+	allowedKeyTypesStr := os.Getenv("HALLOW_ALLOWED_KEY_TYPES")
+	if allowedKeyTypesStr != "" {
+		allowedKeyTypes = strings.Split(allowedKeyTypesStr, " ")
+	}
+
+	log.WithFields(log.Fields{
+		"hallow.allowed_key_types": allowedKeyTypes,
+	}).Debug("Loaded allowed key types")
+
 	sshSigner, err := ssh.NewSignerFromSigner(signer)
 	if err != nil {
 		panic(err)
@@ -195,15 +251,8 @@ func main() {
 			Rand:   rand.Reader,
 			Signer: sshSigner,
 		},
-		certAge: 30 * time.Minute,
-		allowedKeyTypes: []string{
-			ssh.KeyAlgoED25519,
-			ssh.KeyAlgoECDSA521,
-			ssh.KeyAlgoECDSA384,
-			ssh.KeyAlgoECDSA256,
-			ssh.KeyAlgoSKED25519,
-			ssh.KeyAlgoSKECDSA256,
-		},
+		certAge:         30 * time.Minute,
+		allowedKeyTypes: allowedKeyTypes,
 	}
 	lambda.Start(c.handleRequest)
 }
