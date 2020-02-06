@@ -2,13 +2,17 @@ package main
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/binary"
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"strings"
 	"time"
+
+	"crypto/ecdsa"
+	"crypto/ed25519"
+	"crypto/rand"
+	"crypto/rsa"
 
 	"golang.org/x/crypto/ssh"
 
@@ -81,6 +85,28 @@ func createPrincipalName(userArn arn.ARN) (string, error) {
 	}
 }
 
+func (c *config) validatePublicKey(sshPubKey ssh.PublicKey) error {
+	_, ok := sshPubKey.(ssh.CryptoPublicKey)
+	if !ok {
+		return fmt.Errorf("hallow: ssh public key is not a CryptoPublicKey")
+	}
+
+	pubKey := sshPubKey.(ssh.CryptoPublicKey).CryptoPublicKey()
+
+	switch pubKey.(type) {
+	case *rsa.PublicKey:
+		smallestAcceptedSize := 2048
+		if pubKey.(*rsa.PublicKey).N.BitLen() < smallestAcceptedSize {
+			return fmt.Errorf("hallow: rsa: key size is too small")
+		}
+		return nil
+	case *ecdsa.PublicKey, *ed25519.PublicKey:
+		return nil
+	default:
+		return fmt.Errorf("hallow: public key is of an unknown type, can't validate")
+	}
+}
+
 func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	userArn, err := arn.Parse(event.RequestContext.Identity.UserArn)
 	if err != nil {
@@ -128,6 +154,17 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 			"hallow.allowed_key_types": c.allowedKeyTypes,
 			"error":                    err,
 		}).Warn("Incoming SSH key is not the right type")
+		return events.APIGatewayProxyResponse{
+			Body:       "Malformed request",
+			StatusCode: 400,
+		}, nil
+	}
+
+	if err := c.validatePublicKey(publicKey); err != nil {
+		l.WithFields(log.Fields{
+			"hallow.allowed_key_types": c.allowedKeyTypes,
+			"error":                    err,
+		}).Warn("Key failed public key validation checks")
 		return events.APIGatewayProxyResponse{
 			Body:       "Malformed request",
 			StatusCode: 400,
