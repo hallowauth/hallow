@@ -21,6 +21,15 @@ import (
 	"github.com/hallowauth/hallow/kmssigner"
 )
 
+var defaultAllowedKeyTypes = []string{
+	ssh.KeyAlgoED25519,
+	ssh.KeyAlgoECDSA521,
+	ssh.KeyAlgoECDSA384,
+	ssh.KeyAlgoECDSA256,
+	ssh.KeyAlgoSKED25519,
+	ssh.KeyAlgoSKECDSA256,
+}
+
 func stringSliceContains(s string, v []string) bool {
 	for _, x := range v {
 		if s == x {
@@ -185,6 +194,16 @@ func main() {
 		panic(err)
 	}
 
+	allowedKeyTypes := defaultAllowedKeyTypes
+	allowedKeyTypesStr := os.Getenv("HALLOW_ALLOWED_KEY_TYPES")
+	if allowedKeyTypesStr != "" {
+		allowedKeyTypes = strings.Split(allowedKeyTypesStr, " ")
+	}
+
+	log.WithFields(log.Fields{
+		"hallow.allowed_key_types": allowedKeyTypes,
+	}).Debug("Loaded allowed key types")
+
 	sshSigner, err := ssh.NewSignerFromSigner(signer)
 	if err != nil {
 		panic(err)
@@ -195,15 +214,8 @@ func main() {
 			Rand:   rand.Reader,
 			Signer: sshSigner,
 		},
-		certAge: 30 * time.Minute,
-		allowedKeyTypes: []string{
-			ssh.KeyAlgoED25519,
-			ssh.KeyAlgoECDSA521,
-			ssh.KeyAlgoECDSA384,
-			ssh.KeyAlgoECDSA256,
-			ssh.KeyAlgoSKED25519,
-			ssh.KeyAlgoSKECDSA256,
-		},
+		certAge:         30 * time.Minute,
+		allowedKeyTypes: allowedKeyTypes,
 	}
 	lambda.Start(c.handleRequest)
 }
