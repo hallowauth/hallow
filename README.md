@@ -74,3 +74,11 @@ ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFvuBGdF
 ```
 arn:aws:iam::12345.....098:root
 ```
+
+## Configuration knobs
+
+| Environment Variable       | Usage                         |
+|----------------------------|-------------------------------|
+| `HALLOW_KMS_KEY_ARN`       | ARN of the KMS asymmetric key |
+| `HALLOW_ALLOWED_KEY_TYPES` | Space delimied list of supported ssh key types (default set is a sensible default of `ecdsa-sha2-nistp256`, `ecdsa-sha2-nistp384`, `ecdsa-sha2-nistp521`, `ssh-ed25519` |
+
