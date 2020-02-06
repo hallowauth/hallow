@@ -26,8 +26,8 @@ import (
 )
 
 var (
-	defaultCertAge         = 30 * time.Minute
-	defaultAllowedKeyTypes = []string{
+	defaultCertValidityDuration = 30 * time.Minute
+	defaultAllowedKeyTypes      = []string{
 		ssh.KeyAlgoED25519,
 		ssh.KeyAlgoECDSA521,
 		ssh.KeyAlgoECDSA384,
@@ -47,9 +47,9 @@ func stringSliceContains(s string, v []string) bool {
 }
 
 type config struct {
-	ca              CA
-	allowedKeyTypes []string
-	certAge         time.Duration
+	ca                   CA
+	allowedKeyTypes      []string
+	certValidityDuration time.Duration
 }
 
 // User ARNs are from IAM, and can take a few forms. The reason why
@@ -191,7 +191,7 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 		KeyId:           comment,
 		ValidPrincipals: []string{principal},
 		ValidAfter:      uint64(time.Now().Add(-time.Second * 5).Unix()),
-		ValidBefore:     uint64(time.Now().Add(c.certAge).Unix()),
+		ValidBefore:     uint64(time.Now().Add(c.certValidityDuration).Unix()),
 		Permissions: ssh.Permissions{
 			CriticalOptions: map[string]string{},
 			Extensions: map[string]string{
@@ -243,16 +243,16 @@ func main() {
 		"hallow.allowed_key_types": allowedKeyTypes,
 	}).Debug("Loaded allowed key types")
 
-	certAge := defaultCertAge
-	certAgeStr := os.Getenv("HALLOW_CERT_AGE")
-	if certAgeStr != "" {
-		certAge, err = time.ParseDuration(certAgeStr)
+	certValidityDuration := defaultCertValidityDuration
+	certValidityDurationStr := os.Getenv("HALLOW_CERT_VALIDITY_DURATION")
+	if certValidityDurationStr != "" {
+		certValidityDuration, err = time.ParseDuration(certValidityDurationStr)
 		if err != nil {
 			panic(err)
 		}
 	}
 	log.WithFields(log.Fields{
-		"hallow.cert_age": certAge,
+		"hallow.cert_age": certValidityDuration,
 	}).Debug("Loaded certificate age")
 
 	sshSigner, err := ssh.NewSignerFromSigner(signer)
@@ -265,8 +265,8 @@ func main() {
 			Rand:   rand.Reader,
 			Signer: sshSigner,
 		},
-		certAge:         certAge,
-		allowedKeyTypes: allowedKeyTypes,
+		certValidityDuration: certValidityDuration,
+		allowedKeyTypes:      allowedKeyTypes,
 	}
 	lambda.Start(c.handleRequest)
 }
