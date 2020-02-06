@@ -25,14 +25,17 @@ import (
 	"github.com/hallowauth/hallow/kmssigner"
 )
 
-var defaultAllowedKeyTypes = []string{
-	ssh.KeyAlgoED25519,
-	ssh.KeyAlgoECDSA521,
-	ssh.KeyAlgoECDSA384,
-	ssh.KeyAlgoECDSA256,
-	ssh.KeyAlgoSKED25519,
-	ssh.KeyAlgoSKECDSA256,
-}
+var (
+	defaultCertAge         = 30 * time.Minute
+	defaultAllowedKeyTypes = []string{
+		ssh.KeyAlgoED25519,
+		ssh.KeyAlgoECDSA521,
+		ssh.KeyAlgoECDSA384,
+		ssh.KeyAlgoECDSA256,
+		ssh.KeyAlgoSKED25519,
+		ssh.KeyAlgoSKECDSA256,
+	}
+)
 
 func stringSliceContains(s string, v []string) bool {
 	for _, x := range v {
@@ -236,10 +239,21 @@ func main() {
 	if allowedKeyTypesStr != "" {
 		allowedKeyTypes = strings.Split(allowedKeyTypesStr, " ")
 	}
-
 	log.WithFields(log.Fields{
 		"hallow.allowed_key_types": allowedKeyTypes,
 	}).Debug("Loaded allowed key types")
+
+	certAge := defaultCertAge
+	certAgeStr := os.Getenv("HALLOW_CERT_AGE")
+	if certAgeStr != "" {
+		certAge, err = time.ParseDuration(certAgeStr)
+		if err != nil {
+			panic(err)
+		}
+	}
+	log.WithFields(log.Fields{
+		"hallow.cert_age": certAge,
+	}).Debug("Loaded certificate age")
 
 	sshSigner, err := ssh.NewSignerFromSigner(signer)
 	if err != nil {
@@ -251,7 +265,7 @@ func main() {
 			Rand:   rand.Reader,
 			Signer: sshSigner,
 		},
-		certAge:         30 * time.Minute,
+		certAge:         certAge,
 		allowedKeyTypes: allowedKeyTypes,
 	}
 	lambda.Start(c.handleRequest)
