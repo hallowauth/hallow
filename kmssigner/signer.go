@@ -122,15 +122,21 @@ func kmsSigningAlgorithm(pub crypto.PublicKey, opts crypto.SignerOpts) (string, 
 			return "", fmt.Errorf("hallow/kmssigner: unknown hash algorithm for use with ECDSA")
 		}
 	case *rsa.PublicKey:
-		// We currently only support PKCS1v1.5 because we're we're bad people
-		// and feel bad about it.
-		//
-		// We may add a config bool (UsePSSPadding or something) to flip this
-		// to PSS in the future, but for now, since most things expect
-		// PKCS1v1.5, and people will be mad at us if we just, well, don't
-		// support RSA at all.
-		//
-		// So, here we are.
+		// If the opts we're passed is a PSSOptions, sign with PSS,
+		// otherwise fallback to PKCS1v1.5
+		if _, ok := opts.(*rsa.PSSOptions); ok {
+			// We don't handle SaltLength ATM...
+			switch opts.HashFunc() {
+			case crypto.SHA256:
+				return kms.SigningAlgorithmSpecRsassaPssSha256, nil
+			case crypto.SHA384:
+				return kms.SigningAlgorithmSpecRsassaPssSha384, nil
+			case crypto.SHA512:
+				return kms.SigningAlgorithmSpecRsassaPssSha512, nil
+			default:
+				return "", fmt.Errorf("hallow/kmssigner: unknown hash algorithm for use with RSA")
+			}
+		}
 		switch opts.HashFunc() {
 		case crypto.SHA256:
 			return kms.SigningAlgorithmSpecRsassaPkcs1V15Sha256, nil
