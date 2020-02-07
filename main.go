@@ -103,7 +103,7 @@ func (c *config) validatePublicKey(sshPubKey ssh.PublicKey) error {
 			return fmt.Errorf("hallow: rsa: key size is too small")
 		}
 		return nil
-	case *ecdsa.PublicKey, *ed25519.PublicKey:
+	case *ecdsa.PublicKey, ed25519.PublicKey:
 		return nil
 	default:
 		return fmt.Errorf("hallow: public key is of an unknown type, can't validate")
