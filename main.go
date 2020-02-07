@@ -228,6 +228,15 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 }
 
 func main() {
+	logLevel := os.Getenv("LOG_LEVEL")
+	if logLevel != "" {
+		level, err := log.ParseLevel(logLevel)
+		if err != nil {
+			panic(err)
+		}
+		log.SetLevel(level)
+	}
+
 	sess := session.New()
 	signer, err := kmssigner.New(kms.New(sess), os.Getenv("HALLOW_KMS_KEY_ARN"))
 	if err != nil {
