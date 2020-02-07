@@ -79,7 +79,7 @@ arn:aws:iam::12345.....098:root
 
 | Environment Variable       | Usage                         |
 |----------------------------|-------------------------------|
-    | `LOG_LEVEL`                | Log Level for Logrus. Valud vaules are `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `panic` |
+| `LOG_LEVEL`                | Log Level for Logrus. Valid vaules are `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `panic` |
 | `HALLOW_KMS_KEY_ARN`       | ARN of the KMS asymmetric key |
 | `HALLOW_CERT_VALIDITY_DURATION` | Duration that Certifciates issued by Hallow are valid for, in Go `time.Duration` syntax (`1h`, `20s`). Default is `30m` |
 | `HALLOW_ALLOWED_KEY_TYPES` | Space delimied list of supported ssh key types (default set is a sensible default of `ecdsa-sha2-nistp256`, `ecdsa-sha2-nistp384`, `ecdsa-sha2-nistp521`, `ssh-ed25519` |
