@@ -6,6 +6,7 @@ import (
 	"crypto/ed25519"
 	"crypto/rsa"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -67,6 +68,9 @@ func createPrincipalName(userArn arn.ARN) (string, error) {
 	}
 }
 
+var unknownKeyTypeError = errors.New("hallow: public key is of an unknown type, can't validate")
+var smallRsaKeyError = errors.New("hallow: rsa: key size is too small")
+
 func (c *config) validatePublicKey(sshPubKey ssh.PublicKey) error {
 	_, ok := sshPubKey.(ssh.CryptoPublicKey)
 	if !ok {
@@ -79,13 +83,13 @@ func (c *config) validatePublicKey(sshPubKey ssh.PublicKey) error {
 	case *rsa.PublicKey:
 		smallestAcceptedSize := 2048
 		if pubKey.(*rsa.PublicKey).N.BitLen() < smallestAcceptedSize {
-			return fmt.Errorf("hallow: rsa: key size is too small")
+			return smallRsaKeyError
 		}
 		return nil
 	case *ecdsa.PublicKey, ed25519.PublicKey:
 		return nil
 	default:
-		return fmt.Errorf("hallow: public key is of an unknown type, can't validate")
+		return unknownKeyTypeError
 	}
 }
 
