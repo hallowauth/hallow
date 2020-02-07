@@ -1,8 +1,13 @@
 package main
 
 import (
+	"context"
+	"crypto/ed25519"
+	"crypto/rand"
+	"net/http"
 	"testing"
 
+	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go/aws/arn"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ssh"
@@ -67,6 +72,64 @@ func TestValidatePublicKey(t *testing.T) {
 
 			err = h.validatePublicKey(sshPubKey)
 			require.Equal(t, err, c.expectedErr)
+		})
+	}
+}
+
+func TestHandleRequest(t *testing.T) {
+	_, signer, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+	sshSigner, err := ssh.NewSignerFromSigner(signer)
+	require.NoError(t, err)
+
+	for _, c := range []struct {
+		allowedKeyTypes []string
+		description     string
+		userArn         string
+		host            string
+		body            string
+		expectedStatus  int
+	}{
+		{
+			description:     "Valid ed25519",
+			allowedKeyTypes: []string{"ssh-ed25519"},
+			userArn:         "arn:aws:iam::12345:user/john-doe",
+			host:            "test.local",
+			body:            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJOfreF0kMkdJ1ISFvPsucJ7X8UJ07rQV99hQGLYBuSV",
+			expectedStatus:  http.StatusOK,
+		},
+		{
+			description:     "Disallowed keyType",
+			allowedKeyTypes: []string{"ssh-rsa"},
+			userArn:         "arn:aws:iam::12345:user/john-doe",
+			host:            "test.local",
+			body:            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJOfreF0kMkdJ1ISFvPsucJ7X8UJ07rQV99hQGLYBuSV",
+			expectedStatus:  http.StatusBadRequest,
+		},
+	} {
+		t.Run(c.description, func(t *testing.T) {
+			requestEvent := events.APIGatewayProxyRequest{
+				RequestContext: events.APIGatewayProxyRequestContext{
+					Identity: events.APIGatewayRequestIdentity{
+						UserArn: c.userArn,
+					},
+				},
+				Headers: map[string]string{
+					"Host": c.host,
+				},
+				Body: c.body,
+			}
+
+			config := config{
+				allowedKeyTypes: c.allowedKeyTypes,
+				ca: CA{
+					Rand:   rand.Reader,
+					Signer: sshSigner,
+				},
+			}
+			response, err := config.handleRequest(context.Background(), requestEvent)
+			require.NoError(t, err)
+			require.Equal(t, response.StatusCode, c.expectedStatus)
 		})
 	}
 }
