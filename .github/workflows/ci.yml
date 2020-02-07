@@ -18,7 +18,6 @@ jobs:
         uses: actions/setup-go@v1
         with:
           go-version: ${{ matrix.go }}
-      - run: make hallow
       - run: go vet ./...
       - run: |
           output=$(go fmt ./...)
@@ -26,6 +25,8 @@ jobs:
             printf "The following files are not go formatted:\n%s\n" "$output"
             exit 1
           fi
+      - run: go test ./...
+
       # When we have multiple items in our build matrix, make these only run
       # on one of them.
       - run: make hallow.zip
