@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto"
 	"io"
 
 	"golang.org/x/crypto/ssh"
@@ -47,19 +46,6 @@ func (s CA) SignAndParse(template ssh.Certificate) (ssh.PublicKey, []byte, error
 		return nil, nil, err
 	}
 	return pubKey, bytes, nil
-}
-
-// Create a new SSH Certificate Authority to sign ssh public keys.
-func New(rand io.Reader, priv crypto.Signer) (*CA, error) {
-	signer, err := ssh.NewSignerFromSigner(priv)
-	if err != nil {
-		return nil, err
-	}
-
-	return &CA{
-		Rand:   rand,
-		Signer: signer,
-	}, nil
 }
 
 // Create a Certificate. This signature looks similar to the
