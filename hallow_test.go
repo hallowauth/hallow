@@ -15,8 +15,9 @@ import (
 
 func TestCreatePrincipalName(t *testing.T) {
 	for _, c := range []struct {
-		arn      string
-		expected string
+		arn         string
+		expected    string
+		expectedErr error
 	}{
 		{
 			arn:      "arn:aws:sts::12345:assumed-role/my-role/comment",
@@ -26,14 +27,34 @@ func TestCreatePrincipalName(t *testing.T) {
 			arn:      "arn:aws:iam::12345:user/john-doe",
 			expected: "arn:aws:iam::12345:user/john-doe",
 		},
+		{
+			arn:         "arn:aws:sts::12345:federated-user/john-doe",
+			expectedErr: unsupportedStsResourceTypeError,
+		},
+		{
+			arn:         "arn:aws:rds:us-east-1:12345:db:database",
+			expectedErr: unknowUserArnServiceError,
+		},
+		{
+			arn:         "arn:aws:sts::12345:assumed-role/",
+			expectedErr: malformedAssumedRoleArnError,
+		},
+		{
+			arn:         "arn:aws:sts::12345:",
+			expectedErr: unsupportedStsResourceTypeError,
+		},
 	} {
 		t.Run(c.arn, func(t *testing.T) {
 			parsedArn, err := arn.Parse(c.arn)
 			require.NoError(t, err)
 
 			principal, err := createPrincipalName(parsedArn)
-			require.NoError(t, err)
-			require.Equal(t, principal, c.expected)
+			if c.expectedErr == nil {
+				require.NoError(t, err)
+				require.Equal(t, principal, c.expected)
+			} else {
+				require.Equal(t, err, c.expectedErr)
+			}
 		})
 	}
 }

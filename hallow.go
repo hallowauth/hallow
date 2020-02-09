@@ -32,6 +32,10 @@ type config struct {
 	certValidityDuration time.Duration
 }
 
+var unsupportedStsResourceTypeError = errors.New("hallow: unsupported sts resource type")
+var unknowUserArnServiceError = errors.New("hallow: unknown userArn service")
+var malformedAssumedRoleArnError = errors.New("hallow: malformed assumed-role resource")
+
 // User ARNs are from IAM, and can take a few forms. The reason why
 // we can't use them directly is that ARNs from STS can have some non-determinism
 // in them, such as the session name.
@@ -46,25 +50,22 @@ func createPrincipalName(userArn arn.ARN) (string, error) {
 	switch userArn.Service {
 	case "sts":
 		chunks := strings.Split(userArn.Resource, "/")
-		if len(chunks) == 0 {
-			return "", fmt.Errorf("hallow: user arn resource is missing")
-		}
 		switch chunks[0] {
 		case "assumed-role":
 			if len(chunks) != 3 {
-				return "", fmt.Errorf("hallow: malformed assumed-role resource")
+				return "", malformedAssumedRoleArnError
 			}
 			userArn.Resource = fmt.Sprintf("%s/%s", chunks[0], chunks[1])
 			return userArn.String(), nil
 		default:
-			return "", fmt.Errorf("hallow: unsupported sts resource type")
+			return "", unsupportedStsResourceTypeError
 		}
 	case "iam":
 		// for IAM, we can have a few formats, but all are deterministic
 		// and stable.
 		return userArn.String(), nil
 	default:
-		return "", fmt.Errorf("hallow: unknown userArn service")
+		return "", unknowUserArnServiceError
 	}
 }
 
