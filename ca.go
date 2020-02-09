@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto"
 	"io"
 
 	"golang.org/x/crypto/ssh"
