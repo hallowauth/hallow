@@ -84,3 +84,15 @@ arn:aws:iam::12345.....098:root
 | `HALLOW_CERT_VALIDITY_DURATION` | Duration that Certifciates issued by Hallow are valid for, in Go `time.Duration` syntax (`1h`, `20s`). Default is `30m` |
 | `HALLOW_ALLOWED_KEY_TYPES` | Space delimied list of supported ssh key types (default set is a sensible default of `ecdsa-sha2-nistp256`, `ecdsa-sha2-nistp384`, `ecdsa-sha2-nistp521`, `ssh-ed25519` |
 
+## Security considerations
+
+To get the most value out of Hallow, only give people the right to interact
+with Hallow via a [role which is assumed with MFA](https://medium.com/starting-up-security/securing-local-aws-credentials-9589b56a0957).
+This gets you MFA for SSH.
+
+Generate a fresh private key for every certificate. This reduces the damage
+that can be caused by a disclosed private key to the lifetime of the
+certificate.
+
+Hallow does not need to be run in the same AWS account as the rest of your
+infrastructure.
