@@ -5,7 +5,7 @@ Hallow is an OpenSSH Certificate Authority tightly coupled to AWS.
 ## How does Hallow work?
 
 Hallow uses AWS IAM to authenticate incoming requests via API Gateway to
-resolve the IAM identity of the requestee. The API Gateway triggers a Lambda
+resolve the IAM identity of the requester. The API Gateway triggers a Lambda
 running Hallow, which will take the AWS IAM User ARN, and sign the provided
 SSH Public Key with an asymmetric key (either RSA or ECDSA) stored in KMS.
 
@@ -42,7 +42,7 @@ The first is to add the SSH Certificate Authorities, and the second is to
 set which principals are allowed for which users on the system.
 
 `TrustedUserCAKeys` is a list of SSH Public Keys in the `authorized_keys`
-format, seperated by newlines. This file should contain Hallow's KMS
+format, separated by newlines. This file should contain Hallow's KMS
 Public Key in SSH format.
 
 `AuthorizedPrincipalsFile` is a list of principals that are allowed to
@@ -79,10 +79,10 @@ arn:aws:iam::12345.....098:root
 
 | Environment Variable       | Usage                         |
 |----------------------------|-------------------------------|
-| `LOG_LEVEL`                | Log Level for Logrus. Valid vaules are `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `panic` |
+| `LOG_LEVEL`                | Log Level for Logrus. Valid values are `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `panic` |
 | `HALLOW_KMS_KEY_ARN`       | ARN of the KMS asymmetric key |
-| `HALLOW_CERT_VALIDITY_DURATION` | Duration that Certifciates issued by Hallow are valid for, in Go `time.Duration` syntax (`1h`, `20s`). Default is `30m` |
-| `HALLOW_ALLOWED_KEY_TYPES` | Space delimied list of supported ssh key types (default set is a sensible default of `ecdsa-sha2-nistp256`, `ecdsa-sha2-nistp384`, `ecdsa-sha2-nistp521`, `ssh-ed25519` |
+| `HALLOW_CERT_VALIDITY_DURATION` | Duration that Certificates issued by Hallow are valid for, in Go `time.Duration` syntax (`1h`, `20s`). Default is `30m` |
+| `HALLOW_ALLOWED_KEY_TYPES` | Space delimited list of supported ssh key types (default set is a sensible default of `ecdsa-sha2-nistp256`, `ecdsa-sha2-nistp384`, `ecdsa-sha2-nistp521`, `ssh-ed25519` |
 
 ## Security considerations
 
