@@ -9,6 +9,18 @@ resolve the IAM identity of the requester. The API Gateway triggers a Lambda
 running Hallow, which will take the AWS IAM User ARN, and sign the provided
 SSH Public Key with an asymmetric key (either RSA or ECDSA) stored in KMS.
 
+## Why did we build it?
+
+Our goals in building a new SSH CA were:
+
+- Easy to deploy, even (perhaps especially) for small teams. That's why it has
+  relatively few moving pieces, and comes with a terraform module.
+- Leverages an existing authentication system. That's why we use AWS IAM for
+  authentication, making it trivial to require MFA for SSH.
+- Non-extractible private key. That's why we the CA private key lives in KMS.
+- Simple to understand. Security tools should make things easier, not more
+  complicated. Hallow itself is under 500 lines of code.
+
 ## What does it use as the SSH Principal?
 
 Hallow will set the Principal to the User ARN of the incoming request. In
