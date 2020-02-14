@@ -44,7 +44,7 @@ func SSHCLI(signer crypto.Signer, sshCert ssh.PublicKey, sshArgs ...string) ([]s
 		return nil, err
 	}
 
-	return append(nil, "ssh", "-o", fmt.Sprintf("IdentityFile %s/id", tmpdir), sshArgs...), nil
+	return append([]string{"ssh", "-o", fmt.Sprintf("IdentityFile %s/id", tmpdir)}, sshArgs...), nil
 }
 
 func DefaultComment() string {
