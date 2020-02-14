@@ -12,7 +12,7 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-func SSHCLI(signer crypto.Signer, sshCert ssh.PublicKey, server string) ([]string, error) {
+func SSHCLI(signer crypto.Signer, sshCert ssh.PublicKey, sshArgs ...string) ([]string, error) {
 	keyFormat := sshkeys.FormatClassicPEM
 	if _, ok := signer.(ed25519.PrivateKey); ok {
 		keyFormat = sshkeys.FormatOpenSSHv1
@@ -44,7 +44,7 @@ func SSHCLI(signer crypto.Signer, sshCert ssh.PublicKey, server string) ([]strin
 		return nil, err
 	}
 
-	return []string{"ssh", "-o", fmt.Sprintf("IdentityFile %s/id", tmpdir), server}, nil
+	return append(nil, "ssh", "-o", fmt.Sprintf("IdentityFile %s/id", tmpdir), sshArgs...), nil
 }
 
 func DefaultComment() string {
