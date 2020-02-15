@@ -32,9 +32,9 @@ type config struct {
 	certValidityDuration time.Duration
 }
 
-var unsupportedStsResourceTypeError = errors.New("hallow: unsupported sts resource type")
-var unknowUserArnServiceError = errors.New("hallow: unknown userArn service")
-var malformedAssumedRoleArnError = errors.New("hallow: malformed assumed-role resource")
+var errUnsupportedStsResourceType = errors.New("hallow: unsupported sts resource type")
+var errUnknowUserArnService = errors.New("hallow: unknown userArn service")
+var errMalformedAssumedRoleArn = errors.New("hallow: malformed assumed-role resource")
 
 // User ARNs are from IAM, and can take a few forms. The reason why
 // we can't use them directly is that ARNs from STS can have some non-determinism
@@ -53,24 +53,24 @@ func createPrincipalName(userArn arn.ARN) (string, error) {
 		switch chunks[0] {
 		case "assumed-role":
 			if len(chunks) != 3 {
-				return "", malformedAssumedRoleArnError
+				return "", errMalformedAssumedRoleArn
 			}
 			userArn.Resource = fmt.Sprintf("%s/%s", chunks[0], chunks[1])
 			return userArn.String(), nil
 		default:
-			return "", unsupportedStsResourceTypeError
+			return "", errUnsupportedStsResourceType
 		}
 	case "iam":
 		// for IAM, we can have a few formats, but all are deterministic
 		// and stable.
 		return userArn.String(), nil
 	default:
-		return "", unknowUserArnServiceError
+		return "", errUnknowUserArnService
 	}
 }
 
-var unknownKeyTypeError = errors.New("hallow: public key is of an unknown type, can't validate")
-var smallRsaKeyError = errors.New("hallow: rsa: key size is too small")
+var errUnknownKeyType = errors.New("hallow: public key is of an unknown type, can't validate")
+var errSmallRsaKey = errors.New("hallow: rsa: key size is too small")
 
 func (c *config) validatePublicKey(sshPubKey ssh.PublicKey) error {
 	_, ok := sshPubKey.(ssh.CryptoPublicKey)
@@ -84,13 +84,13 @@ func (c *config) validatePublicKey(sshPubKey ssh.PublicKey) error {
 	case *rsa.PublicKey:
 		smallestAcceptedSize := 2048
 		if pubKey.(*rsa.PublicKey).N.BitLen() < smallestAcceptedSize {
-			return smallRsaKeyError
+			return errSmallRsaKey
 		}
 		return nil
 	case *ecdsa.PublicKey, ed25519.PublicKey:
 		return nil
 	default:
-		return unknownKeyTypeError
+		return errUnknownKeyType
 	}
 }
 
