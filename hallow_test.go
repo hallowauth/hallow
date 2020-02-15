@@ -161,6 +161,21 @@ func TestHandleRequest(t *testing.T) {
 			body:            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJOfreF0kMkdJ1ISFvPsucJ7X8UJ07rQV99hQGLYBuSV",
 			responseChecks:  checkStatusCode(http.StatusBadRequest),
 		},
+		{
+			description:    "Malformed public key",
+			userArn:        "arn:aws:iam::12345:user/john-doe",
+			host:           "test.local",
+			body:           "not even remotely a key",
+			responseChecks: checkStatusCode(http.StatusBadRequest),
+		},
+		{
+			description:     "Small RSA key",
+			allowedKeyTypes: []string{"ssh-rsa"},
+			userArn:         "arn:aws:iam::12345:user/john-doe",
+			host:            "test.local",
+			body:            "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQC5OXmDKEHLVj7nTnYlO5dOdK0BO1XJasLSaz9H+Psj/V3DZeQyJZFkJzyByQXOZa7DN+WEkqaapFb7ttS90Bb+zQ5raeCl3GiRmAH8peHPiOn3Sp5G9QtLFNlYuVswdzYdONX0NTIhF//L7+fmL83fr6WzdnXKL8iSsxSCBKKS5Q==",
+			responseChecks:  checkStatusCode(http.StatusBadRequest),
+		},
 	} {
 		t.Run(c.description, func(t *testing.T) {
 			requestEvent := events.APIGatewayProxyRequest{
