@@ -13,6 +13,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/kms"
+	"github.com/aws/aws-sdk-go/service/kms/kmsiface"
 )
 
 // kmsSigner is the internal bit of state used to create a crypto.Signer.
@@ -20,7 +21,7 @@ import (
 // This has no exported functions or params besides the signer interface,
 // so this type was not exported.
 type kmsSigner struct {
-	kmsapi *kms.KMS
+	kmsapi kmsiface.KMSAPI
 	keyArn string
 	pubKey crypto.PublicKey
 	entry  *log.Entry
@@ -39,7 +40,7 @@ type kmsSigner struct {
 // The returned crypto.Signer is an internal type, and contains no
 // methods or exported fields beyond those required from the crypto.Signer
 // interface.
-func New(kmsapi *kms.KMS, keyArn string) (crypto.Signer, error) {
+func New(kmsapi kmsiface.KMSAPI, keyArn string) (crypto.Signer, error) {
 	l := log.WithFields(log.Fields{
 		"kmssigner.kms.key_arn": keyArn,
 	})
