@@ -29,19 +29,19 @@ func TestCreatePrincipalName(t *testing.T) {
 		},
 		{
 			arn:         "arn:aws:sts::12345:federated-user/john-doe",
-			expectedErr: unsupportedStsResourceTypeError,
+			expectedErr: errUnsupportedStsResourceType,
 		},
 		{
 			arn:         "arn:aws:rds:us-east-1:12345:db:database",
-			expectedErr: unknowUserArnServiceError,
+			expectedErr: errUnknowUserArnService,
 		},
 		{
 			arn:         "arn:aws:sts::12345:assumed-role/",
-			expectedErr: malformedAssumedRoleArnError,
+			expectedErr: errMalformedAssumedRoleArn,
 		},
 		{
 			arn:         "arn:aws:sts::12345:",
-			expectedErr: unsupportedStsResourceTypeError,
+			expectedErr: errUnsupportedStsResourceType,
 		},
 	} {
 		t.Run(c.arn, func(t *testing.T) {
@@ -79,12 +79,12 @@ func TestValidatePublicKey(t *testing.T) {
 		// DSA key
 		{
 			pubKey:      "ssh-dss AAAAB3NzaC1kc3MAAACBANLlxcoOBh5rcRm3b0hg7kN31pFFesd4rAncMPe230bNabgjqCEblZPyCkqP9D4aktKIqiCk43YjreXkDrB/1a1ST0ZjGu4914eGIW68W1vCtqOqFe21kHWLhh/HhZXlWHLwrHu9RkcMOAghDhj/tlkmgu09WfTnJnuXKqrAIYmnAAAAFQCJjFbwiJP976BeSCX3tNLFzR5JHwAAAIEArAdfNtpmnThMD6guamSKg17vv1MtFCxg7xuP7kweFPFepzD+l/xKXsUq1nnTRFqF4HDsHT0xgXY5567wBfQEqATFBxY7Zd/8298TY8aQbLcjLr+pQ9bQRMjKM2XOjVr31neNSJf51DaCjmvNWMv5vnCBoIDXY72TJvSryIN/W9MAAACAFrPrlKRD746a/Qr0+ZOyUI4GJC0e04zgG9a/tLNh6cNyBn6nVVgyCOLhQqONyhZks4ZUFTHphNpEUGBUgN8Ox4kaYf4wQB6G+SvcprjZrC06RCQGJYS5vFSgNpqrh/6nCAaeDtsFH3Lx5ot/sxQYw2OzTOdkbSRCBV/SNBruDNI=",
-			expectedErr: unknownKeyTypeError,
+			expectedErr: errUnknownKeyType,
 		},
 		// Small RSA key
 		{
 			pubKey:      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQC5OXmDKEHLVj7nTnYlO5dOdK0BO1XJasLSaz9H+Psj/V3DZeQyJZFkJzyByQXOZa7DN+WEkqaapFb7ttS90Bb+zQ5raeCl3GiRmAH8peHPiOn3Sp5G9QtLFNlYuVswdzYdONX0NTIhF//L7+fmL83fr6WzdnXKL8iSsxSCBKKS5Q==",
-			expectedErr: smallRsaKeyError,
+			expectedErr: errSmallRsaKey,
 		},
 	} {
 		t.Run(c.pubKey, func(t *testing.T) {
