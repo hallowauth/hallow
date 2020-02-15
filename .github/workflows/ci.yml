@@ -25,7 +25,12 @@ jobs:
             printf "The following files are not go formatted:\n%s\n" "$output"
             exit 1
           fi
-      - run: go test ./...
+      - run: go test -coverprofile=coverage.out ./...
+      - run: go tool cover -html=coverage.out -o coverage.html
+      - uses: actions/upload-artifact@v1
+        with:
+          name: coverage.html
+          path: coverage.html
 
       # When we have multiple items in our build matrix, make these only run
       # on one of them.
