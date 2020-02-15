@@ -97,6 +97,35 @@ func TestValidatePublicKey(t *testing.T) {
 	}
 }
 
+type responseCheck func(t *testing.T, response events.APIGatewayProxyResponse)
+type certCheck func(t *testing.T, cert *ssh.Certificate)
+
+func checkStatusCode(code int) responseCheck {
+	return func(t *testing.T, response events.APIGatewayProxyResponse) {
+		require.Equal(t, response.StatusCode, code)
+	}
+}
+
+func certChecks(checks ...certCheck) certCheck {
+	return func(t *testing.T, cert *ssh.Certificate) {
+		for _, check := range checks {
+			check(t, cert)
+		}
+	}
+}
+
+func checkPrincipal(principals ...string) certCheck {
+	return func(t *testing.T, cert *ssh.Certificate) {
+		require.Equal(t, cert.ValidPrincipals, principals)
+	}
+}
+
+func checkExtension(key string, value string) certCheck {
+	return func(t *testing.T, cert *ssh.Certificate) {
+		require.Equal(t, cert.Extensions[key], value)
+	}
+}
+
 func TestHandleRequest(t *testing.T) {
 	_, signer, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
@@ -109,7 +138,8 @@ func TestHandleRequest(t *testing.T) {
 		userArn         string
 		host            string
 		body            string
-		expectedStatus  int
+		responseChecks  responseCheck
+		certChecks      certCheck
 	}{
 		{
 			description:     "Valid ed25519",
@@ -117,7 +147,11 @@ func TestHandleRequest(t *testing.T) {
 			userArn:         "arn:aws:iam::12345:user/john-doe",
 			host:            "test.local",
 			body:            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJOfreF0kMkdJ1ISFvPsucJ7X8UJ07rQV99hQGLYBuSV",
-			expectedStatus:  http.StatusOK,
+			responseChecks:  checkStatusCode(http.StatusOK),
+			certChecks: certChecks(
+				checkPrincipal("arn:aws:iam::12345:user/john-doe"),
+				checkExtension("hallow-host@dc.cant.vote", "test.local"),
+			),
 		},
 		{
 			description:     "Disallowed keyType",
@@ -125,7 +159,7 @@ func TestHandleRequest(t *testing.T) {
 			userArn:         "arn:aws:iam::12345:user/john-doe",
 			host:            "test.local",
 			body:            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJOfreF0kMkdJ1ISFvPsucJ7X8UJ07rQV99hQGLYBuSV",
-			expectedStatus:  http.StatusBadRequest,
+			responseChecks:  checkStatusCode(http.StatusBadRequest),
 		},
 	} {
 		t.Run(c.description, func(t *testing.T) {
@@ -150,7 +184,14 @@ func TestHandleRequest(t *testing.T) {
 			}
 			response, err := config.handleRequest(context.Background(), requestEvent)
 			require.NoError(t, err)
-			require.Equal(t, response.StatusCode, c.expectedStatus)
+			if c.responseChecks != nil {
+				c.responseChecks(t, response)
+			}
+			if c.certChecks != nil {
+				key, _, _, _, err := ssh.ParseAuthorizedKey([]byte(response.Body))
+				require.NoError(t, err)
+				c.certChecks(t, key.(*ssh.Certificate))
+			}
 		})
 	}
 }
