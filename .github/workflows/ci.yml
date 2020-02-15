@@ -18,7 +18,6 @@ jobs:
         uses: actions/setup-go@v1
         with:
           go-version: ${{ matrix.go }}
-      - run: go vet ./...
       - run: |
           output=$(go fmt ./...)
           if [[ ! "$output" = "" ]]; then
@@ -26,6 +25,7 @@ jobs:
             exit 1
           fi
       - run: go test ./...
+      - uses: actions-contrib/golangci-lint@v1
 
       # When we have multiple items in our build matrix, make these only run
       # on one of them.
