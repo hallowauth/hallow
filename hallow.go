@@ -188,7 +188,7 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 		},
 	}
 
-	sshCert, _, err := c.ca.SignAndParse(template)
+	sshCert, err := c.ca.Sign(template)
 	if err != nil {
 		l.WithFields(log.Fields{"error": err}).Warn("The CA can't sign the Certificate")
 		return events.APIGatewayProxyResponse{
