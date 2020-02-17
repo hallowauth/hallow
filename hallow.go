@@ -167,10 +167,10 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 		}, nil
 	}
 
-	serial := int64(binary.LittleEndian.Uint64(b[:]))
+	serial := binary.LittleEndian.Uint64(b[:])
 	template := ssh.Certificate{
 		Key:             publicKey,
-		Serial:          uint64(serial),
+		Serial:          serial,
 		CertType:        ssh.UserCert,
 		KeyId:           comment,
 		ValidPrincipals: []string{principal},
