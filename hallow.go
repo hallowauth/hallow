@@ -192,8 +192,8 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 	if err != nil {
 		l.WithFields(log.Fields{"error": err}).Warn("The CA can't sign the Certificate")
 		return events.APIGatewayProxyResponse{
-			Body:       "Malformed request",
-			StatusCode: 400,
+			Body:       "Internal server error",
+			StatusCode: 500,
 		}, nil
 	}
 	l.WithFields(log.Fields{
