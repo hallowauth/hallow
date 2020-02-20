@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/ScaleFT/sshkeys v0.0.0-20181112160850-82451a803681
 	github.com/aws/aws-lambda-go v1.14.0
-	github.com/aws/aws-sdk-go v1.29.3
+	github.com/aws/aws-sdk-go v1.29.7
 	github.com/dchest/bcrypt_pbkdf v0.0.0-20150205184540-83f37f9c154a // indirect
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/sirupsen/logrus v1.4.2
