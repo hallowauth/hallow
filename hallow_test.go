@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"crypto/ed25519"
+	"crypto/elliptic"
 	"crypto/rand"
 	"net/http"
 	"testing"
@@ -120,6 +122,12 @@ func checkPrincipal(principals ...string) certCheck {
 	}
 }
 
+func checkSignatureAlgorithm(algorithm string) certCheck {
+	return func(t *testing.T, cert *ssh.Certificate) {
+		require.Equal(t, cert.Signature.Format, algorithm)
+	}
+}
+
 func checkExtension(key string, value string) certCheck {
 	return func(t *testing.T, cert *ssh.Certificate) {
 		require.Equal(t, cert.Extensions[key], value)
@@ -127,14 +135,20 @@ func checkExtension(key string, value string) certCheck {
 }
 
 func TestHandleRequest(t *testing.T) {
-	_, signer, err := ed25519.GenerateKey(rand.Reader)
+	_, ed25519Key, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
-	sshSigner, err := ssh.NewSignerFromSigner(signer)
+	ed25519Signer, err := ssh.NewSignerFromSigner(ed25519Key)
+	require.NoError(t, err)
+
+	p256Key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+	p256Signer, err := ssh.NewSignerFromSigner(p256Key)
 	require.NoError(t, err)
 
 	for _, c := range []struct {
-		allowedKeyTypes []string
 		description     string
+		allowedKeyTypes []string
+		signer          ssh.Signer
 		userArn         string
 		host            string
 		body            string
@@ -144,6 +158,7 @@ func TestHandleRequest(t *testing.T) {
 		{
 			description:     "Valid ed25519",
 			allowedKeyTypes: []string{"ssh-ed25519"},
+			signer:          ed25519Signer,
 			userArn:         "arn:aws:iam::12345:user/john-doe",
 			host:            "test.local",
 			body:            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJOfreF0kMkdJ1ISFvPsucJ7X8UJ07rQV99hQGLYBuSV",
@@ -151,11 +166,27 @@ func TestHandleRequest(t *testing.T) {
 			certChecks: certChecks(
 				checkPrincipal("arn:aws:iam::12345:user/john-doe"),
 				checkExtension("hallow-host@dc.cant.vote", "test.local"),
+				checkSignatureAlgorithm(ssh.KeyAlgoED25519),
+			),
+		},
+		{
+			description:     "Valid ed25519, p256 signer",
+			allowedKeyTypes: []string{"ssh-ed25519"},
+			signer:          p256Signer,
+			userArn:         "arn:aws:iam::12345:user/john-doe",
+			host:            "test.local",
+			body:            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJOfreF0kMkdJ1ISFvPsucJ7X8UJ07rQV99hQGLYBuSV",
+			responseChecks:  checkStatusCode(http.StatusOK),
+			certChecks: certChecks(
+				checkPrincipal("arn:aws:iam::12345:user/john-doe"),
+				checkExtension("hallow-host@dc.cant.vote", "test.local"),
+				checkSignatureAlgorithm(ssh.KeyAlgoECDSA256),
 			),
 		},
 		{
 			description:     "Disallowed keyType",
 			allowedKeyTypes: []string{"ssh-rsa"},
+			signer:          ed25519Signer,
 			userArn:         "arn:aws:iam::12345:user/john-doe",
 			host:            "test.local",
 			body:            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJOfreF0kMkdJ1ISFvPsucJ7X8UJ07rQV99hQGLYBuSV",
@@ -164,6 +195,7 @@ func TestHandleRequest(t *testing.T) {
 		{
 			description:    "Malformed public key",
 			userArn:        "arn:aws:iam::12345:user/john-doe",
+			signer:         ed25519Signer,
 			host:           "test.local",
 			body:           "not even remotely a key",
 			responseChecks: checkStatusCode(http.StatusBadRequest),
@@ -171,6 +203,7 @@ func TestHandleRequest(t *testing.T) {
 		{
 			description:     "Small RSA key",
 			allowedKeyTypes: []string{"ssh-rsa"},
+			signer:          ed25519Signer,
 			userArn:         "arn:aws:iam::12345:user/john-doe",
 			host:            "test.local",
 			body:            "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQC5OXmDKEHLVj7nTnYlO5dOdK0BO1XJasLSaz9H+Psj/V3DZeQyJZFkJzyByQXOZa7DN+WEkqaapFb7ttS90Bb+zQ5raeCl3GiRmAH8peHPiOn3Sp5G9QtLFNlYuVswdzYdONX0NTIhF//L7+fmL83fr6WzdnXKL8iSsxSCBKKS5Q==",
@@ -194,7 +227,7 @@ func TestHandleRequest(t *testing.T) {
 				allowedKeyTypes: c.allowedKeyTypes,
 				ca: CA{
 					Rand:   rand.Reader,
-					Signer: sshSigner,
+					Signer: c.signer,
 				},
 			}
 			response, err := config.handleRequest(context.Background(), requestEvent)
