@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: ['1.13']
+        go: ['1.13', '1.14']
     name: Go ${{ matrix.go }} build
     steps:
       - uses: actions/checkout@master
@@ -31,11 +31,11 @@ jobs:
         with:
           name: coverage.html
           path: coverage.html
+        if: matrix.go == '1.14'
 
-      # When we have multiple items in our build matrix, make these only run
-      # on one of them.
       - run: make hallow.zip
       - uses: actions/upload-artifact@v1
         with:
           name: hallow.zip
           path: hallow.zip
+        if: matrix.go == '1.14'
