@@ -73,17 +73,15 @@ var errUnknownKeyType = errors.New("hallow: public key is of an unknown type, ca
 var errSmallRsaKey = errors.New("hallow: rsa: key size is too small")
 
 func (c *config) validatePublicKey(sshPubKey ssh.PublicKey) error {
-	_, ok := sshPubKey.(ssh.CryptoPublicKey)
+	cryptoPubKey, ok := sshPubKey.(ssh.CryptoPublicKey)
 	if !ok {
 		return fmt.Errorf("hallow: ssh public key is not a CryptoPublicKey")
 	}
 
-	pubKey := sshPubKey.(ssh.CryptoPublicKey).CryptoPublicKey()
-
-	switch pubKey.(type) {
+	switch pubKey := cryptoPubKey.CryptoPublicKey().(type) {
 	case *rsa.PublicKey:
 		smallestAcceptedSize := 2048
-		if pubKey.(*rsa.PublicKey).N.BitLen() < smallestAcceptedSize {
+		if pubKey.N.BitLen() < smallestAcceptedSize {
 			return errSmallRsaKey
 		}
 		return nil
