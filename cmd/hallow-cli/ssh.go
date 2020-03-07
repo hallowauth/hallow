@@ -34,7 +34,7 @@ func SSH(c *cli.Context) error {
 
 	signer, sshCert, err := hallow.GenerateAndRequestCertificate(
 		c.Context,
-		client.KeyTypeED25519,
+		client.KeyTypeECDSAP256,
 		c.String("key-id"),
 	)
 	if err != nil {
