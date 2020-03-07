@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"strings"
+	"os"
+	"os/exec"
 
 	"github.com/urfave/cli/v2"
 
@@ -12,7 +13,7 @@ import (
 var (
 	SSHCommand = &cli.Command{
 		Name:   "ssh",
-		Usage:  "Prints the command to SSH into a server. Generally used `eval $(hallow-cli ssh myserver.com)`",
+		Usage:  "SSH into a server with hallow.",
 		Action: SSH,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
@@ -39,11 +40,15 @@ func SSH(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	args, err := client.SSHCLI(signer, sshCert, c.Args().Get(0))
+	sshArgs, err := client.SSHCLI(signer, sshCert, c.Args().Get(0))
 	if err != nil {
 		return err
 	}
-	fmt.Println(strings.Join(args, " "))
+	command := exec.CommandContext(c.Context, sshArgs[0], sshArgs[1:]...)
+	command.Env = os.Environ()
+	command.Stdin = os.Stdin
+	command.Stdout = os.Stdout
+	command.Stderr = os.Stderr
 
-	return nil
+	return command.Run()
 }
