@@ -12,7 +12,10 @@ import (
 	"time"
 
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/arn"
+	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 )
@@ -28,44 +31,72 @@ func stringSliceContains(s string, v []string) bool {
 
 type config struct {
 	ca                   CA
+	iamClient            iamiface.IAMAPI
 	allowedKeyTypes      []string
 	certValidityDuration time.Duration
+}
+
+func getAdditionalPrincipalsForRole(ctx context.Context, iamClient iamiface.IAMAPI, roleName string) ([]string, error) {
+	response, err := iamClient.GetRoleWithContext(ctx, &iam.GetRoleInput{
+		RoleName: aws.String(roleName),
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, tag := range response.Role.Tags {
+		if aws.StringValue(tag.Key) == "hallow.additional_principals" {
+			return strings.Split(aws.StringValue(tag.Value), ","), nil
+		}
+	}
+	return nil, nil
 }
 
 var errUnsupportedStsResourceType = errors.New("hallow: unsupported sts resource type")
 var errUnknowUserArnService = errors.New("hallow: unknown userArn service")
 var errMalformedAssumedRoleArn = errors.New("hallow: malformed assumed-role resource")
 
+// createPrincipalNames selects which principals will be assigned for a
+// certificate requested by the provided ARN.
+//
 // User ARNs are from IAM, and can take a few forms. The reason why
-// we can't use them directly is that ARNs from STS can have some non-determinism
-// in them, such as the session name.
+// we can't use them directly is that ARNs from STS can have some
+// non-determinism in them, such as the session name.
 //
 // As a result, we'll pass through the ARN if it's an IAM ARN, but if it's
-// STS, we'll trim the ARN down to the first two blocks.
+// STS assumed-role ARN, we'll trim it down to the first two blocks.
 //
 // For more information on this class of nonsense, you may consider
 // https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_identifiers.html
 // for some bedtime reading.
-func createPrincipalName(userArn arn.ARN) (string, error) {
+//
+// For assumed role ARNs we will additionally look up the role, and if it has a
+// Tag named "hallow.additional_principals" will return them.
+func createPrincipalNames(ctx context.Context, iamClient iamiface.IAMAPI, userArn arn.ARN) ([]string, error) {
 	switch userArn.Service {
 	case "sts":
 		chunks := strings.Split(userArn.Resource, "/")
 		switch chunks[0] {
 		case "assumed-role":
 			if len(chunks) != 3 {
-				return "", errMalformedAssumedRoleArn
+				return nil, errMalformedAssumedRoleArn
 			}
 			userArn.Resource = fmt.Sprintf("%s/%s", chunks[0], chunks[1])
-			return userArn.String(), nil
+			principals := []string{userArn.String()}
+			additionalPrincipals, err := getAdditionalPrincipalsForRole(
+				ctx, iamClient, chunks[1])
+			if err != nil {
+				return nil, err
+			}
+			return append(principals, additionalPrincipals...), nil
 		default:
-			return "", errUnsupportedStsResourceType
+			return nil, errUnsupportedStsResourceType
 		}
 	case "iam":
 		// for IAM, we can have a few formats, but all are deterministic
 		// and stable.
-		return userArn.String(), nil
+		return []string{userArn.String()}, nil
 	default:
-		return "", errUnknowUserArnService
+		return nil, errUnknowUserArnService
 	}
 }
 
@@ -111,7 +142,7 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 		}, nil
 	}
 
-	principal, err := createPrincipalName(userArn)
+	principals, err := createPrincipalNames(ctx, c.iamClient, userArn)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Warn("Incoming ARN isn't a valid principal")
 		return events.APIGatewayProxyResponse{
@@ -171,7 +202,7 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 		Serial:          serial,
 		CertType:        ssh.UserCert,
 		KeyId:           comment,
-		ValidPrincipals: []string{principal},
+		ValidPrincipals: principals,
 		ValidAfter:      uint64(time.Now().Add(-time.Second * 5).Unix()),
 		ValidBefore:     uint64(time.Now().Add(c.certValidityDuration).Unix()),
 		Permissions: ssh.Permissions{

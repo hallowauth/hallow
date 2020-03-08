@@ -42,6 +42,11 @@ data "aws_iam_policy_document" "lambda_policy" {
     ]
     resources = [aws_kms_key.ssh_ca_key.arn]
   }
+
+  statement {
+    actions   = ["iam:GetRole"]
+    resources = ["*"]
+  }
 }
 
 resource "aws_cloudwatch_log_group" "log_group" {

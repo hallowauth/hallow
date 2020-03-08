@@ -10,24 +10,70 @@ import (
 	"testing"
 
 	"github.com/aws/aws-lambda-go/events"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/arn"
+	"github.com/aws/aws-sdk-go/aws/request"
+	"github.com/aws/aws-sdk-go/service/iam"
+	"github.com/aws/aws-sdk-go/service/iam/iamiface"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/ssh"
 )
 
-func TestCreatePrincipalName(t *testing.T) {
+type fakeIAMAPI struct {
+	iamiface.IAMAPI
+	// Map of {roleName => "additional,principals"}
+	roleAdditionalPrincipals map[string]string
+}
+
+func (c fakeIAMAPI) GetRoleWithContext(_ context.Context, req *iam.GetRoleInput, _ ...request.Option) (*iam.GetRoleOutput, error) {
+	tags := []*iam.Tag{}
+	if principals, ok := c.roleAdditionalPrincipals[aws.StringValue(req.RoleName)]; ok {
+		tags = append(tags, &iam.Tag{
+			Key:   aws.String("hallow.additional_principals"),
+			Value: aws.String(principals),
+		})
+	}
+	return &iam.GetRoleOutput{
+		Role: &iam.Role{
+			RoleName: req.RoleName,
+			Tags:     tags,
+		},
+	}, nil
+}
+
+func TestCreatePrincipalNames(t *testing.T) {
+	ctx := context.Background()
 	for _, c := range []struct {
 		arn         string
-		expected    string
+		iamClient   iamiface.IAMAPI
+		expected    []string
 		expectedErr error
 	}{
 		{
-			arn:      "arn:aws:sts::12345:assumed-role/my-role/comment",
-			expected: "arn:aws:sts::12345:assumed-role/my-role",
+			arn:       "arn:aws:sts::12345:assumed-role/my-role/comment",
+			iamClient: fakeIAMAPI{},
+			expected:  []string{"arn:aws:sts::12345:assumed-role/my-role"},
+		},
+		{
+			arn: "arn:aws:sts::12345:assumed-role/my-role/comment",
+			iamClient: fakeIAMAPI{
+				roleAdditionalPrincipals: map[string]string{
+					"my-role": "extra-principal,or-two",
+				},
+			},
+			expected: []string{
+				"arn:aws:sts::12345:assumed-role/my-role",
+				"extra-principal",
+				"or-two",
+			},
 		},
 		{
 			arn:      "arn:aws:iam::12345:user/john-doe",
-			expected: "arn:aws:iam::12345:user/john-doe",
+			expected: []string{"arn:aws:iam::12345:user/john-doe"},
+		},
+		{
+			arn:      "arn:aws:iam::12345:user/john-doe",
+			expected: []string{"arn:aws:iam::12345:user/john-doe"},
 		},
 		{
 			arn:         "arn:aws:sts::12345:federated-user/john-doe",
@@ -50,10 +96,10 @@ func TestCreatePrincipalName(t *testing.T) {
 			parsedArn, err := arn.Parse(c.arn)
 			require.NoError(t, err)
 
-			principal, err := createPrincipalName(parsedArn)
+			principals, err := createPrincipalNames(ctx, c.iamClient, parsedArn)
 			if c.expectedErr == nil {
 				require.NoError(t, err)
-				require.Equal(t, principal, c.expected)
+				require.Equal(t, principals, c.expected)
 			} else {
 				require.Equal(t, err, c.expectedErr)
 			}
@@ -148,6 +194,7 @@ func TestHandleRequest(t *testing.T) {
 	for _, c := range []struct {
 		description     string
 		allowedKeyTypes []string
+		iamClient       iamiface.IAMAPI
 		signer          ssh.Signer
 		userArn         string
 		host            string
@@ -181,6 +228,25 @@ func TestHandleRequest(t *testing.T) {
 				checkPrincipal("arn:aws:iam::12345:user/john-doe"),
 				checkExtension("hallow-host@dc.cant.vote", "test.local"),
 				checkSignatureAlgorithm(ssh.KeyAlgoECDSA256),
+			),
+		},
+		{
+			description:     "Assumed role with tags",
+			allowedKeyTypes: []string{"ssh-ed25519"},
+			iamClient: fakeIAMAPI{
+				roleAdditionalPrincipals: map[string]string{
+					"my-role": "additional-principal",
+				},
+			},
+			signer:         ed25519Signer,
+			userArn:        "arn:aws:sts::12345:assumed-role/my-role/comment",
+			host:           "test.local",
+			body:           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJOfreF0kMkdJ1ISFvPsucJ7X8UJ07rQV99hQGLYBuSV",
+			responseChecks: checkStatusCode(http.StatusOK),
+			certChecks: certChecks(
+				checkPrincipal("arn:aws:sts::12345:assumed-role/my-role", "additional-principal"),
+				checkExtension("hallow-host@dc.cant.vote", "test.local"),
+				checkSignatureAlgorithm(ssh.KeyAlgoED25519),
 			),
 		},
 		{
@@ -224,6 +290,7 @@ func TestHandleRequest(t *testing.T) {
 			}
 
 			config := config{
+				iamClient:       c.iamClient,
 				allowedKeyTypes: c.allowedKeyTypes,
 				ca: CA{
 					Rand:   rand.Reader,
