@@ -6,7 +6,7 @@ on:
 
 
 jobs:
-  build:
+  go:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -39,3 +39,44 @@ jobs:
           name: hallow.zip
           path: hallow.zip
         if: matrix.go == '1.14'
+  terraform:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        terraform: ['latest']
+    name: Terraform ${{ matrix.terraform }}
+    steps:
+      - uses: actions/checkout@master
+
+      - name: terraform fmt
+        uses: hashicorp/terraform-github-actions@v0.8.0
+        with:
+          tf_actions_version: ${{ matrix.terraform }}
+          tf_actions_subcommand: 'fmt'
+          tf_actions_working_dir: 'terraform/'
+          tf_actions_comment: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: terraform init
+        uses: hashicorp/terraform-github-actions@v0.8.0
+        with:
+          tf_actions_version: ${{ matrix.terraform }}
+          tf_actions_subcommand: 'init'
+          tf_actions_working_dir: 'terraform/'
+          tf_actions_comment: true
+          args: '-backend=false'
+        env:
+          AWS_DEFAULT_REGION: "us-east-1"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: terraform validate
+        uses: hashicorp/terraform-github-actions@v0.8.0
+        with:
+          tf_actions_version: ${{ matrix.terraform }}
+          tf_actions_subcommand: 'validate'
+          tf_actions_working_dir: 'terraform/'
+          tf_actions_comment: true
+        env:
+          AWS_DEFAULT_REGION: "us-east-1"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
