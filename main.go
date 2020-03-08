@@ -8,6 +8,7 @@ import (
 
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/kms"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
@@ -76,6 +77,7 @@ func main() {
 		},
 		certValidityDuration: certValidityDuration,
 		allowedKeyTypes:      allowedKeyTypes,
+		iamClient:            iam.New(sess),
 	}
 	lambda.Start(c.handleRequest)
 }

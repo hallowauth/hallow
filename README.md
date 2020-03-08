@@ -40,6 +40,11 @@ your certificate will be of the form
 for the role itself (which is of the form
 `arn:aws:iam::{account_id}:role/{role_name}`).
 
+Additionally, if you are authenticating to Hallow with an Assumed Role, Hallow
+will look at the tags on the role, and if there is a tag named
+`hallow.additional_principals` it will use that value as additional principals
+for the certificate. To pass multiple values comma separate them.
+
 ## Deploying Hallow
 
 The easiest way to deploy Hallow is with the Terraform module provided in the
