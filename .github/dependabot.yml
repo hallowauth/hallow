@@ -1,0 +1,17 @@
+version: 2
+updates:
+  # Update all go deps daily, except github.com/aws/aws-sdk-go which we update
+  # weekly.
+  - package-ecosystem: gomod
+    directory: "/"
+    schedule:
+      interval: daily
+    ignore:
+      - dependency-name: github.com/aws/aws-sdk-go
+
+- package-ecosystem: gomod
+    directory: "/"
+    schedule:
+      interval: weekly
+    allow:
+      - dependency-name: github.com/aws/aws-sdk-go
