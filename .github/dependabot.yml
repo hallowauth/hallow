@@ -9,7 +9,7 @@ updates:
     ignore:
       - dependency-name: github.com/aws/aws-sdk-go
 
-- package-ecosystem: gomod
+  - package-ecosystem: gomod
     directory: "/"
     schedule:
       interval: weekly
