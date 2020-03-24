@@ -125,7 +125,7 @@ func (c *config) validatePublicKey(sshPubKey ssh.PublicKey) error {
 
 func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	l := log.WithField("request.client_ip", event.RequestContext.Identity.SourceIP)
-	
+
 	userArn, err := arn.Parse(event.RequestContext.Identity.UserArn)
 	if err != nil {
 		l.WithError(err).Warn("Incoming ARN is invalid")
