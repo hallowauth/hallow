@@ -124,9 +124,11 @@ func (c *config) validatePublicKey(sshPubKey ssh.PublicKey) error {
 }
 
 func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	l := log.WithField("request.client_ip", event.RequestContext.Identity.SourceIP)
+
 	userArn, err := arn.Parse(event.RequestContext.Identity.UserArn)
 	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Warn("Incoming ARN is invalid")
+		l.WithError(err).Warn("Incoming ARN is invalid")
 		return events.APIGatewayProxyResponse{
 			Body:       "Malformed request",
 			StatusCode: 400,
@@ -135,7 +137,7 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 
 	host, ok := event.Headers["Host"]
 	if !ok {
-		log.Warn("Host header is not present!")
+		l.Warn("Host header is not present!")
 		return events.APIGatewayProxyResponse{
 			Body:       "Malformed request",
 			StatusCode: 400,
@@ -144,7 +146,7 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 
 	principals, err := createPrincipalNames(ctx, c.iamClient, userArn)
 	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Warn("Incoming ARN isn't a valid principal")
+		l.WithError(err).Warn("Incoming ARN isn't a valid principal")
 		return events.APIGatewayProxyResponse{
 			Body:       "Malformed request",
 			StatusCode: 400,
@@ -153,14 +155,14 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 
 	publicKey, comment, _, _, err := ssh.ParseAuthorizedKey([]byte(event.Body))
 	if err != nil {
-		log.WithFields(log.Fields{"error": err}).Warn("Incoming SSH key is invalid")
+		l.WithError(err).Warn("Incoming SSH key is invalid")
 		return events.APIGatewayProxyResponse{
 			Body:       "Malformed request",
 			StatusCode: 400,
 		}, nil
 
 	}
-	l := log.WithFields(log.Fields{
+	l = l.WithFields(log.Fields{
 		"request.comment":         comment,
 		"request.public_key.type": publicKey.Type(),
 	})
@@ -189,7 +191,7 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 
 	var b [8]byte
 	if _, err := c.ca.Rand.Read(b[:]); err != nil {
-		l.WithFields(log.Fields{"error": err}).Warn("Can't create a nonce")
+		l.WithError(err).Warn("Can't create a nonce")
 		return events.APIGatewayProxyResponse{
 			Body:       "Internal server error",
 			StatusCode: 500,
@@ -219,7 +221,7 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 
 	sshCert, err := c.ca.Sign(template)
 	if err != nil {
-		l.WithFields(log.Fields{"error": err}).Warn("The CA can't sign the Certificate")
+		l.WithError(err).Warn("The CA can't sign the Certificate")
 		return events.APIGatewayProxyResponse{
 			Body:       "Internal server error",
 			StatusCode: 500,
