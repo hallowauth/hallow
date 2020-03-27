@@ -124,8 +124,12 @@ TrustedUserCAKeys=/etc/ssh/hallow_cas
 AuthorizedPrincipalsFile=/etc/ssh/principals/%u
 ```
 
-Write the key from `hallow-ca.pub` into `/etc/ssh/hallow_cas` on the remote
+Write the key from `hallow-ca.pub` to `/etc/ssh/hallow_cas` on the remote
 machine.
+
+```
+$ echo "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFvuBGdFLPNRg+xZkGfQ5u9V3FD6etx0cz0fx6HkjzAvZ0W/FF4HYZPsCkLpsJhjaRfF1Nm9mNXiyaHsrkfaKgQ=" | sudo tee /etc/ssh/hallow_cas
+```
 
 Now, let's write out the AWS ARNs as the authorized principals for any
 users we would like to grant access to:
