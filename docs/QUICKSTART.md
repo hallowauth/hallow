@@ -128,7 +128,7 @@ Write the key from `hallow-ca.pub` to `/etc/ssh/hallow_cas` on the remote
 machine.
 
 ```
-$ sudo echo "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFvuBGdFLPNRg+xZkGfQ5u9V3FD6etx0cz0fx6HkjzAvZ0W/FF4HYZPsCkLpsJhjaRfF1Nm9mNXiyaHsrkfaKgQ=" > /etc/ssh/hallow_cas
+$ echo "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFvuBGdFLPNRg+xZkGfQ5u9V3FD6etx0cz0fx6HkjzAvZ0W/FF4HYZPsCkLpsJhjaRfF1Nm9mNXiyaHsrkfaKgQ=" | sudo tee /etc/ssh/hallow_cas
 ```
 
 Now, let's write out the AWS ARNs as the authorized principals for any
