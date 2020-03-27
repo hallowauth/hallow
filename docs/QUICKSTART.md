@@ -128,7 +128,8 @@ Write the key from `hallow-ca.pub` to `/etc/ssh/hallow_cas` on the remote
 machine.
 
 ```
-$ echo "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFvuBGdFLPNRg+xZkGfQ5u9V3FD6etx0cz0fx6HkjzAvZ0W/FF4HYZPsCkLpsJhjaRfF1Nm9mNXiyaHsrkfaKgQ=" | sudo tee /etc/ssh/hallow_cas
+
+[user@remote-computer]$ echo "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBFvuBGdFLPNRg+xZkGfQ5u9V3FD6etx0cz0fx6HkjzAvZ0W/FF4HYZPsCkLpsJhjaRfF1Nm9mNXiyaHsrkfaKgQ=" | sudo tee /etc/ssh/hallow_cas
 ```
 
 Now, let's write out the AWS ARNs as the authorized principals for any
@@ -136,7 +137,7 @@ users we would like to grant access to:
 
 ```
 [user@remote-computer]$ sudo mkdir /etc/ssh/principals/
-[user@remote-computer]$ sudo echo arn::aws::iam::..........:root > /etc/ssh/principals/${USER}
+[user@remote-computer]$ echo arn::aws::iam::..........:root | sudo tee /etc/ssh/principals/${USER}
 ```
 
 Finally, let's reboot ssh, and *keep this terminal open!*. If something goes
