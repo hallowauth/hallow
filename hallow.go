@@ -205,7 +205,7 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 		CertType:        ssh.UserCert,
 		KeyId:           comment,
 		ValidPrincipals: principals,
-		ValidAfter:      uint64(time.Now().Add(-time.Second * 5).Unix()),
+		ValidAfter:      uint64(time.Now().Add(-time.Minute * 1).Unix()),
 		ValidBefore:     uint64(time.Now().Add(c.certValidityDuration).Unix()),
 		Permissions: ssh.Permissions{
 			CriticalOptions: map[string]string{},
