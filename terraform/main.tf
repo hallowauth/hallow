@@ -50,7 +50,7 @@ data "aws_iam_policy_document" "lambda_policy" {
 }
 
 resource "aws_cloudwatch_log_group" "log_group" {
-  // Magic name! Lambda is hard coded to which group it logs to, we pre-creat
+  // Magic name! Lambda is hard coded to which group it logs to, we pre-create
   // that to be able to reference in the IAM policy.
   name = "/aws/lambda/hallow"
 }
