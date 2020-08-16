@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: ['1.13', '1.14']
+        go: ['1.13', '1.14', '1.15']
     name: Go ${{ matrix.go }} build
     steps:
       - uses: actions/checkout@master
@@ -31,14 +31,14 @@ jobs:
         with:
           name: coverage.html
           path: coverage.html
-        if: matrix.go == '1.14'
+        if: matrix.go == '1.15'
 
       - run: make hallow.zip
       - uses: actions/upload-artifact@v1
         with:
           name: hallow.zip
           path: hallow.zip
-        if: matrix.go == '1.14'
+        if: matrix.go == '1.15'
   terraform:
     runs-on: ubuntu-latest
     strategy:
