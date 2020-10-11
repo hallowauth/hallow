@@ -4,6 +4,9 @@ updates:
     directory: "/"
     schedule:
       interval: daily
+    allow:
+      # Also update indirect dependencies
+      - dependency-type: all
     # Updates every single day, and 99% of the time, we don't care
     ignore:
       - dependency-name: github.com/aws/aws-sdk-go
