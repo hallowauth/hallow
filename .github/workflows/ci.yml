@@ -27,14 +27,14 @@ jobs:
           fi
       - run: go test -coverprofile=coverage.out ./...
       - run: go tool cover -html=coverage.out -o coverage.html
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v2.2.1
         with:
           name: coverage.html
           path: coverage.html
         if: matrix.go == '1.15'
 
       - run: make hallow.zip
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v2.2.1
         with:
           name: hallow.zip
           path: hallow.zip
