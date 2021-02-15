@@ -1,8 +1,10 @@
 package main
 
 import (
+	"crypto"
 	"io"
 
+	"github.com/aws/aws-lambda-go/events"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -18,19 +20,29 @@ type CA struct {
 	// may be set to something like `nil`.
 	Rand io.Reader
 
-	// Wrapped `crypto.Signer` to preform OpenSSH CA operations.
-	Signer ssh.Signer
+	// Function to choose which signer to use based on request information
+	ChooseSigner func(events.APIGatewayProxyRequest) (crypto.Signer, error)
 }
 
 // Sign an SSH Certificate template (with `Key` set), and return the
 // certificate.
-func (s CA) Sign(template ssh.Certificate) (*ssh.Certificate, error) {
+func (s CA) Sign(template ssh.Certificate, event events.APIGatewayProxyRequest) (*ssh.Certificate, error) {
+	signer, err := s.ChooseSigner(event)
+	if err != nil {
+		panic(err)
+	}
+
+	sshSigner, err := ssh.NewSignerFromSigner(signer)
+	if err != nil {
+		panic(err)
+	}
+
 	return CreateCertificate(
 		s.Rand,
 		template,
-		s.Signer.PublicKey(),
+		sshSigner.PublicKey(),
 		template.Key,
-		s.Signer,
+		sshSigner,
 	)
 }
 
