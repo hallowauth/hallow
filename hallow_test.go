@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto"
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/elliptic"
@@ -180,22 +181,33 @@ func checkExtension(key string, value string) certCheck {
 	}
 }
 
+type TestChooser struct {
+	key crypto.Signer
+}
+
+func (testChooser TestChooser) Choose(context APIGatewayContext) (crypto.Signer, error) {
+	return testChooser.key, nil
+
+}
+
 func TestHandleRequest(t *testing.T) {
 	_, ed25519Key, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
-	ed25519Signer, err := ssh.NewSignerFromSigner(ed25519Key)
-	require.NoError(t, err)
+	ed25519Chooser := TestChooser{
+		key: ed25519Key,
+	}
 
 	p256Key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)
-	p256Signer, err := ssh.NewSignerFromSigner(p256Key)
-	require.NoError(t, err)
+	p256Chooser := TestChooser{
+		key: p256Key,
+	}
 
 	for _, c := range []struct {
 		description     string
 		allowedKeyTypes []string
 		iamClient       iamiface.IAMAPI
-		signer          ssh.Signer
+		SignerChooser   TestChooser
 		userArn         string
 		host            string
 		body            string
@@ -205,7 +217,7 @@ func TestHandleRequest(t *testing.T) {
 		{
 			description:     "Valid ed25519",
 			allowedKeyTypes: []string{"ssh-ed25519"},
-			signer:          ed25519Signer,
+			SignerChooser:   ed25519Chooser,
 			userArn:         "arn:aws:iam::12345:user/john-doe",
 			host:            "test.local",
 			body:            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJOfreF0kMkdJ1ISFvPsucJ7X8UJ07rQV99hQGLYBuSV",
@@ -219,7 +231,7 @@ func TestHandleRequest(t *testing.T) {
 		{
 			description:     "Valid ed25519, p256 signer",
 			allowedKeyTypes: []string{"ssh-ed25519"},
-			signer:          p256Signer,
+			SignerChooser:   p256Chooser,
 			userArn:         "arn:aws:iam::12345:user/john-doe",
 			host:            "test.local",
 			body:            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJOfreF0kMkdJ1ISFvPsucJ7X8UJ07rQV99hQGLYBuSV",
@@ -238,7 +250,7 @@ func TestHandleRequest(t *testing.T) {
 					"my-role": "additional-principal",
 				},
 			},
-			signer:         ed25519Signer,
+			SignerChooser:  ed25519Chooser,
 			userArn:        "arn:aws:sts::12345:assumed-role/my-role/comment",
 			host:           "test.local",
 			body:           "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJOfreF0kMkdJ1ISFvPsucJ7X8UJ07rQV99hQGLYBuSV",
@@ -252,7 +264,7 @@ func TestHandleRequest(t *testing.T) {
 		{
 			description:     "Disallowed keyType",
 			allowedKeyTypes: []string{"ssh-rsa"},
-			signer:          ed25519Signer,
+			SignerChooser:   ed25519Chooser,
 			userArn:         "arn:aws:iam::12345:user/john-doe",
 			host:            "test.local",
 			body:            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJOfreF0kMkdJ1ISFvPsucJ7X8UJ07rQV99hQGLYBuSV",
@@ -261,7 +273,7 @@ func TestHandleRequest(t *testing.T) {
 		{
 			description:    "Malformed public key",
 			userArn:        "arn:aws:iam::12345:user/john-doe",
-			signer:         ed25519Signer,
+			SignerChooser:  ed25519Chooser,
 			host:           "test.local",
 			body:           "not even remotely a key",
 			responseChecks: checkStatusCode(http.StatusBadRequest),
@@ -269,7 +281,7 @@ func TestHandleRequest(t *testing.T) {
 		{
 			description:     "Small RSA key",
 			allowedKeyTypes: []string{"ssh-rsa"},
-			signer:          ed25519Signer,
+			SignerChooser:   ed25519Chooser,
 			userArn:         "arn:aws:iam::12345:user/john-doe",
 			host:            "test.local",
 			body:            "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQC5OXmDKEHLVj7nTnYlO5dOdK0BO1XJasLSaz9H+Psj/V3DZeQyJZFkJzyByQXOZa7DN+WEkqaapFb7ttS90Bb+zQ5raeCl3GiRmAH8peHPiOn3Sp5G9QtLFNlYuVswdzYdONX0NTIhF//L7+fmL83fr6WzdnXKL8iSsxSCBKKS5Q==",
@@ -293,8 +305,8 @@ func TestHandleRequest(t *testing.T) {
 				iamClient:       c.iamClient,
 				allowedKeyTypes: c.allowedKeyTypes,
 				ca: CA{
-					Rand:   rand.Reader,
-					Signer: c.signer,
+					Rand:          rand.Reader,
+					signerChooser: c.SignerChooser,
 				},
 			}
 			response, err := config.handleRequest(context.Background(), requestEvent)

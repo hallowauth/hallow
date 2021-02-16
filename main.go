@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto"
 	"crypto/rand"
 	"os"
 	"strings"
@@ -27,6 +28,23 @@ var (
 		ssh.KeyAlgoSKECDSA256,
 	}
 )
+
+// We supply some context from API Gateway to decide which signing key to use.
+// This could easily be extended to contain additional context.
+type APIGatewayContext struct {
+	SourceIP string
+	UserArn  string
+}
+
+// We just implement a DefaultSigner that always uses HALLOW_KMS_KEY_ARN.
+// But you could implement your own SignerChooser that uses APIGatewayContext.
+type DefaultSigner struct {
+	DefaultCryptoSigner crypto.Signer
+}
+
+func (d DefaultSigner) Choose(context APIGatewayContext) (crypto.Signer, error) {
+	return d.DefaultCryptoSigner, nil
+}
 
 func main() {
 	logLevel := os.Getenv("LOG_LEVEL")
@@ -65,15 +83,14 @@ func main() {
 		"hallow.cert_age": certValidityDuration,
 	}).Debug("Loaded certificate age")
 
-	sshSigner, err := ssh.NewSignerFromSigner(signer)
-	if err != nil {
-		panic(err)
+	defaultSigner := DefaultSigner{
+		DefaultCryptoSigner: signer,
 	}
 
 	c := &config{
 		ca: CA{
-			Rand:   rand.Reader,
-			Signer: sshSigner,
+			Rand:          rand.Reader,
+			signerChooser: defaultSigner,
 		},
 		certValidityDuration: certValidityDuration,
 		allowedKeyTypes:      allowedKeyTypes,
