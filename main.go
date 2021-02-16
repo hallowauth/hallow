@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/iam"
@@ -30,14 +29,22 @@ var (
 	}
 )
 
-// Choose which KMS Key to use for signing
-// The default is to use the env var HALLOW_KMS_KEY_ARN, but you could
-// customize this based on the API Gateway request event.
-func ChooseSigner(event events.APIGatewayProxyRequest) (crypto.Signer, error) {
-	sess := session.New()
-	signer, err := kmssigner.New(kms.New(sess), os.Getenv("HALLOW_KMS_KEY_ARN"))
+// We supply some context from API Gateway to decide which signing key to use.
+// This could easily be extended to contain additional context.
+type APIGatewayContext struct {
+	SourceIP string
+	UserArn  string
+}
 
-	return signer, err
+// We just implement a DefaultSigner that always uses HALLOW_KMS_KEY_ARN.
+// But you could implement your own SignerChooser that uses APIGatewayContext.
+type DefaultSigner struct {
+	DefaultKMSKeyARN string
+}
+
+func (d DefaultSigner) Choose(context APIGatewayContext) (crypto.Signer, error) {
+	sess := session.New()
+	return kmssigner.New(kms.New(sess), d.DefaultKMSKeyARN)
 }
 
 func main() {
@@ -75,10 +82,14 @@ func main() {
 		"hallow.cert_age": certValidityDuration,
 	}).Debug("Loaded certificate age")
 
+	defaultSigner := DefaultSigner{
+		DefaultKMSKeyARN: os.Getenv("HALLOW_KMS_KEY_ARN"),
+	}
+
 	c := &config{
 		ca: CA{
-			Rand:         rand.Reader,
-			ChooseSigner: ChooseSigner,
+			Rand:          rand.Reader,
+			signerChooser: defaultSigner,
 		},
 		certValidityDuration: certValidityDuration,
 		allowedKeyTypes:      allowedKeyTypes,
