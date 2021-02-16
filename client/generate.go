@@ -10,14 +10,27 @@ import (
 	"io"
 )
 
+// KeyType is an enum type to allow for the description of a specific Key
+// algorithm.
 type KeyType uint8
 
 const (
+	// KeyTypeECDSAP256 is ECDSA P-256
 	KeyTypeECDSAP256 KeyType = iota
+
+	// KeyTypeECDSAP384 is ECDSA P-384
 	KeyTypeECDSAP384
+
+	// KeyTypeECDSAP521 is ECDSA P-521
 	KeyTypeECDSAP521
+
+	// KeyTypeED25519 is Ed25519
 	KeyTypeED25519
+
+	// KeyTypeRSA2048 is RSA with 2048 bits.
 	KeyTypeRSA2048
+
+	// KeyTypeRSA4096 is RSA with 4096 bits.
 	KeyTypeRSA4096
 )
 

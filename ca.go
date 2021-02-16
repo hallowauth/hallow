@@ -7,6 +7,9 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+// SignerChooser allows for the selection of the correct crypto.Signer to be
+// used for the certificate created for the provided request. This allows a
+// different signer to be used based on the user's ARN, or IP subnet.
 type SignerChooser interface {
 	Choose(APIGatewayContext) (crypto.Signer, error)
 }

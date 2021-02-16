@@ -29,19 +29,24 @@ var (
 	}
 )
 
-// We supply some context from API Gateway to decide which signing key to use.
-// This could easily be extended to contain additional context.
+// APIGatewayContext contains key attributes extracted from the incoming request.
+// This allows for a clean contract between the Chooser and the Hallow runtime.
+//
+// If additional information is required, please open a request on Hallow, so
+// that we can clearly track the API promises made to the consuming code.
 type APIGatewayContext struct {
 	SourceIP string
 	UserArn  string
 }
 
-// We just implement a DefaultSigner that always uses HALLOW_KMS_KEY_ARN.
-// But you could implement your own SignerChooser that uses APIGatewayContext.
+// DefaultSigner will sign requests using the crypto.Signer contained within
+// the struct. This acts as a "passthrough", and should be used unless there's
+// a specific need to pick private key material based on the incoming request.
 type DefaultSigner struct {
 	DefaultCryptoSigner crypto.Signer
 }
 
+// Choose implements the SignerChooser interface.
 func (d DefaultSigner) Choose(context APIGatewayContext) (crypto.Signer, error) {
 	return d.DefaultCryptoSigner, nil
 }

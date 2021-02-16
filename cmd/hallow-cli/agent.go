@@ -12,6 +12,7 @@ import (
 )
 
 var (
+	// AgentCommand is the cobra.CLI Agent command.
 	AgentCommand = &cli.Command{
 		Name:   "ssh-add",
 		Usage:  "Generate a new ssh key, and add the key and certificate to an agent",
@@ -37,7 +38,10 @@ var (
 	}
 )
 
-//
+// Agent will get or create a private key from the running SSH agent, get
+// or request a new Certificate, and ensure that the agent is up-to-date. This
+// can be invoked frequently, and will continue to refresh the ssh certificate
+// with the configured Hallow endpoint.
 func Agent(c *cli.Context) error {
 	hallow, err := hallowClientFromCLI(c)
 	if err != nil {
