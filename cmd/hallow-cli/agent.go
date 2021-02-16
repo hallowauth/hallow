@@ -39,7 +39,10 @@ var (
 
 //
 func Agent(c *cli.Context) error {
-	hallow := hallowClientFromCLI(c)
+	hallow, err := hallowClientFromCLI(c)
+	if err != nil {
+		return err
+	}
 
 	keyType, err := keyTypeFromCLI(c)
 	if err != nil {

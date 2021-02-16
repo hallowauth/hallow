@@ -20,7 +20,10 @@ var (
 )
 
 func GetPubKey(c *cli.Context) error {
-	sess := session.New()
+	sess, err := session.NewSession()
+	if err != nil {
+		return err
+	}
 
 	for _, keyArn := range c.Args().Slice() {
 		signer, err := kmssigner.New(kms.New(sess), keyArn)

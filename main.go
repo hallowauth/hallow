@@ -56,7 +56,10 @@ func main() {
 		log.SetLevel(level)
 	}
 
-	sess := session.New()
+	sess, err := session.NewSession()
+	if err != nil {
+		panic(err)
+	}
 	signer, err := kmssigner.New(kms.New(sess), os.Getenv("HALLOW_KMS_KEY_ARN"))
 	if err != nil {
 		panic(err)

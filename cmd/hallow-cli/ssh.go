@@ -30,7 +30,10 @@ func SSH(c *cli.Context) error {
 		return fmt.Errorf("ssh takes exactly one argument")
 	}
 
-	hallow := hallowClientFromCLI(c)
+	hallow, err := hallowClientFromCLI(c)
+	if err != nil {
+		return err
+	}
 
 	signer, sshCert, err := hallow.GenerateAndRequestCertificate(
 		c.Context,

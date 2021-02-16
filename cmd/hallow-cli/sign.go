@@ -22,7 +22,10 @@ var (
 
 //
 func Sign(c *cli.Context) error {
-	hallow := hallowClientFromCLI(c)
+	hallow, err := hallowClientFromCLI(c)
+	if err != nil {
+		return err
+	}
 
 	for _, path := range c.Args().Slice() {
 		l := log.WithFields(log.Fields{"hallow.public_key.path": path})
