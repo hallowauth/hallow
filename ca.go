@@ -4,7 +4,6 @@ import (
 	"crypto"
 	"io"
 
-	"github.com/aws/aws-lambda-go/events"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -30,11 +29,7 @@ type CA struct {
 
 // Sign an SSH Certificate template (with `Key` set), and return the
 // certificate.
-func (s CA) Sign(template ssh.Certificate, event events.APIGatewayProxyRequest) (*ssh.Certificate, error) {
-	context := APIGatewayContext{
-		SourceIP: event.RequestContext.Identity.SourceIP,
-		UserArn:  event.RequestContext.Identity.UserArn,
-	}
+func (s CA) Sign(template ssh.Certificate, context APIGatewayContext) (*ssh.Certificate, error) {
 	signer, err := s.signerChooser.Choose(context)
 	if err != nil {
 		return nil, err
