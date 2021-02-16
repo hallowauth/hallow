@@ -222,7 +222,11 @@ func (c *config) handleRequest(ctx context.Context, event events.APIGatewayProxy
 		},
 	}
 
-	sshCert, err := c.ca.Sign(template)
+	requestContext := APIGatewayContext{
+		SourceIP: event.RequestContext.Identity.SourceIP,
+		UserArn:  event.RequestContext.Identity.UserArn,
+	}
+	sshCert, err := c.ca.Sign(template, requestContext)
 	if err != nil {
 		l.WithError(err).Warn("The CA can't sign the Certificate")
 		return events.APIGatewayProxyResponse{

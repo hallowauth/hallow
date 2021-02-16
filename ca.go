@@ -1,10 +1,15 @@
 package main
 
 import (
+	"crypto"
 	"io"
 
 	"golang.org/x/crypto/ssh"
 )
+
+type SignerChooser interface {
+	Choose(APIGatewayContext) (crypto.Signer, error)
+}
 
 // CA is an implementation of the OpenSSH Certificate Authority.
 //
@@ -18,19 +23,29 @@ type CA struct {
 	// may be set to something like `nil`.
 	Rand io.Reader
 
-	// Wrapped `crypto.Signer` to preform OpenSSH CA operations.
-	Signer ssh.Signer
+	// Interface to choose which signer to use based on request information
+	signerChooser SignerChooser
 }
 
 // Sign an SSH Certificate template (with `Key` set), and return the
 // certificate.
-func (s CA) Sign(template ssh.Certificate) (*ssh.Certificate, error) {
+func (s CA) Sign(template ssh.Certificate, context APIGatewayContext) (*ssh.Certificate, error) {
+	signer, err := s.signerChooser.Choose(context)
+	if err != nil {
+		return nil, err
+	}
+
+	sshSigner, err := ssh.NewSignerFromSigner(signer)
+	if err != nil {
+		return nil, err
+	}
+
 	return CreateCertificate(
 		s.Rand,
 		template,
-		s.Signer.PublicKey(),
+		sshSigner.PublicKey(),
 		template.Key,
-		s.Signer,
+		sshSigner,
 	)
 }
 
