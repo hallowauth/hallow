@@ -69,12 +69,12 @@ func Agent(c *cli.Context) error {
 	agentClient := agent.NewClient(conn)
 	l.Trace("opened agent connection")
 
-	keyId := c.String("key-id")
+	keyID := c.String("key-id")
 	_, err = hallow.GetOrGenerateFromAgent(
 		c.Context,
 		agentClient,
 		keyType,
-		keyId,
+		keyID,
 	)
 	if err != nil {
 		l.WithFields(log.Fields{
