@@ -39,17 +39,14 @@ type APIGatewayContext struct {
 // We just implement a DefaultSigner that always uses HALLOW_KMS_KEY_ARN.
 // But you could implement your own SignerChooser that uses APIGatewayContext.
 type DefaultSigner struct {
-	DefaultKMSKeyARN string
+	DefaultCryptoSigner crypto.Signer
 }
 
 func (d DefaultSigner) Choose(context APIGatewayContext) (crypto.Signer, error) {
-	sess := session.New()
-	return kmssigner.New(kms.New(sess), d.DefaultKMSKeyARN)
+	return d.DefaultCryptoSigner, nil
 }
 
 func main() {
-	var err error
-
 	logLevel := os.Getenv("LOG_LEVEL")
 	if logLevel != "" {
 		level, err := log.ParseLevel(logLevel)
@@ -60,6 +57,10 @@ func main() {
 	}
 
 	sess := session.New()
+	signer, err := kmssigner.New(kms.New(sess), os.Getenv("HALLOW_KMS_KEY_ARN"))
+	if err != nil {
+		panic(err)
+	}
 
 	allowedKeyTypes := defaultAllowedKeyTypes
 	allowedKeyTypesStr := os.Getenv("HALLOW_ALLOWED_KEY_TYPES")
@@ -83,7 +84,7 @@ func main() {
 	}).Debug("Loaded certificate age")
 
 	defaultSigner := DefaultSigner{
-		DefaultKMSKeyARN: os.Getenv("HALLOW_KMS_KEY_ARN"),
+		DefaultCryptoSigner: signer,
 	}
 
 	c := &config{
