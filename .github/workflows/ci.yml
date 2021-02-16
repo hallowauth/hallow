@@ -27,6 +27,10 @@ jobs:
           fi
       - run: go test -coverprofile=coverage.out ./...
       - run: go tool cover -html=coverage.out -o coverage.html
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: v1.29
       - uses: actions/upload-artifact@v2.2.2
         with:
           name: coverage.html
