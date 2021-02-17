@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto"
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/elliptic"
@@ -181,33 +180,24 @@ func checkExtension(key string, value string) certCheck {
 	}
 }
 
-type TestChooser struct {
-	key crypto.Signer
-}
-
-func (testChooser TestChooser) Choose(context APIGatewayContext) (crypto.Signer, error) {
-	return testChooser.key, nil
-
-}
-
 func TestHandleRequest(t *testing.T) {
 	_, ed25519Key, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
-	ed25519Chooser := TestChooser{
-		key: ed25519Key,
+	ed25519Chooser := FixedSigner{
+		CryptoSigner: ed25519Key,
 	}
 
 	p256Key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)
-	p256Chooser := TestChooser{
-		key: p256Key,
+	p256Chooser := FixedSigner{
+		CryptoSigner: p256Key,
 	}
 
 	for _, c := range []struct {
 		description     string
 		allowedKeyTypes []string
 		iamClient       iamiface.IAMAPI
-		SignerChooser   TestChooser
+		SignerChooser   SignerChooser
 		userArn         string
 		host            string
 		body            string
