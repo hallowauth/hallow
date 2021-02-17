@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto"
 	"crypto/rand"
 	"os"
 	"strings"
@@ -37,18 +36,6 @@ var (
 type APIGatewayContext struct {
 	SourceIP string
 	UserArn  string
-}
-
-// DefaultSigner will sign requests using the crypto.Signer contained within
-// the struct. This acts as a "passthrough", and should be used unless there's
-// a specific need to pick private key material based on the incoming request.
-type DefaultSigner struct {
-	DefaultCryptoSigner crypto.Signer
-}
-
-// Choose implements the SignerChooser interface.
-func (d DefaultSigner) Choose(context APIGatewayContext) (crypto.Signer, error) {
-	return d.DefaultCryptoSigner, nil
 }
 
 func main() {
@@ -91,14 +78,14 @@ func main() {
 		"hallow.cert_age": certValidityDuration,
 	}).Debug("Loaded certificate age")
 
-	defaultSigner := DefaultSigner{
-		DefaultCryptoSigner: signer,
+	fixedSigner := FixedSigner{
+		CryptoSigner: signer,
 	}
 
 	c := &config{
 		ca: CA{
 			Rand:          rand.Reader,
-			signerChooser: defaultSigner,
+			signerChooser: fixedSigner,
 		},
 		certValidityDuration: certValidityDuration,
 		allowedKeyTypes:      allowedKeyTypes,

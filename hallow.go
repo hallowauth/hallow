@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto"
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/rsa"
@@ -27,6 +28,18 @@ func stringSliceContains(s string, v []string) bool {
 		}
 	}
 	return false
+}
+
+// FixedSigner will sign requests using the crypto.Signer contained within
+// the struct. This acts as a "passthrough", and should be used unless there's
+// a specific need to pick private key material based on the incoming request.
+type FixedSigner struct {
+	CryptoSigner crypto.Signer
+}
+
+// Choose implements the SignerChooser interface.
+func (f FixedSigner) Choose(context APIGatewayContext) (crypto.Signer, error) {
+	return f.CryptoSigner, nil
 }
 
 type config struct {
