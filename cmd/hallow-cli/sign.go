@@ -13,6 +13,7 @@ import (
 )
 
 var (
+	// SignCommand is the sign CLI command.
 	SignCommand = &cli.Command{
 		Name:   "sign",
 		Usage:  "sign an ssh public key",
@@ -20,9 +21,13 @@ var (
 	}
 )
 
-//
+// Sign will request the configured Hallow endpoint sign the provided SSH
+// public key.
 func Sign(c *cli.Context) error {
-	hallow := hallowClientFromCLI(c)
+	hallow, err := hallowClientFromCLI(c)
+	if err != nil {
+		return err
+	}
 
 	for _, path := range c.Args().Slice() {
 		l := log.WithFields(log.Fields{"hallow.public_key.path": path})

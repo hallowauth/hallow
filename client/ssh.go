@@ -12,6 +12,8 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+// SSHCLI will write out key material to a tempfile and return a command to be
+// exec'd.
 func SSHCLI(signer crypto.Signer, sshCert ssh.PublicKey, sshArgs ...string) ([]string, error) {
 	keyFormat := sshkeys.FormatClassicPEM
 	if _, ok := signer.(ed25519.PrivateKey); ok {
@@ -47,6 +49,11 @@ func SSHCLI(signer crypto.Signer, sshCert ssh.PublicKey, sshArgs ...string) ([]s
 	return append([]string{"ssh", "-o", fmt.Sprintf("IdentityFile %s/id", tmpdir)}, sshArgs...), nil
 }
 
+// DefaultComment will create the default ssh key comment given the local
+// envrionment. The default option will be to construct username@hostname.
+//
+// If the username can not be determined, it will default to 'hallow'.
+// If the hostname can not be determined, it will default to the username.
 func DefaultComment() string {
 	u, err := user.Current()
 	if err != nil {

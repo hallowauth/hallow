@@ -27,6 +27,12 @@ jobs:
           fi
       - run: go test -coverprofile=coverage.out ./...
       - run: go tool cover -html=coverage.out -o coverage.html
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          args: -E golint
+          version: v1.29
+        if: matrix.go == '1.16'
       - uses: actions/upload-artifact@v2.2.2
         with:
           name: coverage.html

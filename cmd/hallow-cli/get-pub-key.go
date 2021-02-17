@@ -12,6 +12,7 @@ import (
 )
 
 var (
+	// GetPubKeyCommand is the get-pub-key CLI command.
 	GetPubKeyCommand = &cli.Command{
 		Name:   "get-pub-key",
 		Usage:  "Gets the SSH public key for the CA KMS key",
@@ -19,8 +20,12 @@ var (
 	}
 )
 
+// GetPubKey will fetch the SSH public key for the configured Hallow CA.
 func GetPubKey(c *cli.Context) error {
-	sess := session.New()
+	sess, err := session.NewSession()
+	if err != nil {
+		return err
+	}
 
 	for _, keyArn := range c.Args().Slice() {
 		signer, err := kmssigner.New(kms.New(sess), keyArn)

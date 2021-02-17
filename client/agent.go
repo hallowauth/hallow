@@ -30,7 +30,7 @@ func (c Client) GetOrGenerateFromAgent(
 	ctx context.Context,
 	agentClient agent.Agent,
 	keyType KeyType,
-	keyId string,
+	keyID string,
 ) (ssh.PublicKey, error) {
 	certs, err := c.ListCertificatesFromAgent(agentClient)
 	if err != nil {
@@ -48,7 +48,7 @@ func (c Client) GetOrGenerateFromAgent(
 	}
 
 	log.Trace("requesting a cert from hallow")
-	priv, pub, err := c.GenerateAndRequestCertificate(ctx, keyType, keyId)
+	priv, pub, err := c.GenerateAndRequestCertificate(ctx, keyType, keyID)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
@@ -62,7 +62,7 @@ func (c Client) GetOrGenerateFromAgent(
 		agentClient,
 		priv,
 		pub.(*ssh.Certificate),
-		keyId,
+		keyID,
 	)
 }
 
@@ -71,7 +71,7 @@ func (c Client) addCertificateToAgent(
 	agentClient agent.Agent,
 	privKey crypto.Signer,
 	cert *ssh.Certificate,
-	keyId string,
+	keyID string,
 ) error {
 	lifetime := int64(cert.ValidBefore) - time.Now().Unix()
 
@@ -83,7 +83,7 @@ func (c Client) addCertificateToAgent(
 		PrivateKey:   privKey,
 		Certificate:  cert,
 		LifetimeSecs: uint32(lifetime),
-		Comment:      keyId,
+		Comment:      keyID,
 	}); err != nil {
 		l.WithFields(log.Fields{
 			"error": err,
@@ -122,7 +122,7 @@ Agents known to not work with Certificates:
 
 If you're not running one of these agents, or running ssh-agent, consider
 filing a bug at https://github.com/hallowauth/hallow`)
-	return errors.New("hallow: addCertificateToAgent did not add the Certificate to the agent!")
+	return errors.New("hallow: addCertificateToAgent did not add the Certificate to the agent")
 }
 
 // ListCertificatesFromAgent will find all active ssh.Certificate entries in the

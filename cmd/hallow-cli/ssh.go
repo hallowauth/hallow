@@ -11,6 +11,7 @@ import (
 )
 
 var (
+	// SSHCommand is the ssh CLI subcommand.
 	SSHCommand = &cli.Command{
 		Name:   "ssh",
 		Usage:  "SSH into a server with hallow.",
@@ -25,12 +26,17 @@ var (
 	}
 )
 
+// SSH will ssh into a server using a freshly generated private key, signed
+// by the configured Hallow endpoint.
 func SSH(c *cli.Context) error {
 	if c.NArg() != 1 {
 		return fmt.Errorf("ssh takes exactly one argument")
 	}
 
-	hallow := hallowClientFromCLI(c)
+	hallow, err := hallowClientFromCLI(c)
+	if err != nil {
+		return err
+	}
 
 	signer, sshCert, err := hallow.GenerateAndRequestCertificate(
 		c.Context,

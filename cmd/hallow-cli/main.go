@@ -12,8 +12,13 @@ import (
 )
 
 //
-func hallowClientFromCLI(c *cli.Context) client.Client {
-	return client.New(session.New(), c.String("endpoint"))
+func hallowClientFromCLI(c *cli.Context) (*client.Client, error) {
+	sess, err := session.NewSession()
+	if err != nil {
+		return nil, err
+	}
+	handle := client.New(sess, c.String("endpoint"))
+	return &handle, nil
 }
 
 //
