@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	// AgentCommand is the cobra.CLI Agent command.
+	// AgentCommand is the ssh-add cli subcommand.
 	AgentCommand = &cli.Command{
 		Name:   "ssh-add",
 		Usage:  "Generate a new ssh key, and add the key and certificate to an agent",
