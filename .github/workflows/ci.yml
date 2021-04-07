@@ -33,14 +33,14 @@ jobs:
           args: -E golint
           version: v1.29
         if: matrix.go == '1.16'
-      - uses: actions/upload-artifact@v2.2.2
+      - uses: actions/upload-artifact@v2.2.3
         with:
           name: coverage.html
           path: coverage.html
         if: matrix.go == '1.16'
 
       - run: make hallow.zip
-      - uses: actions/upload-artifact@v2.2.2
+      - uses: actions/upload-artifact@v2.2.3
         with:
           name: hallow.zip
           path: hallow.zip
