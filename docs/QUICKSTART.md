@@ -90,14 +90,13 @@ computer, so please be sure it's not important!
 
 #### Get our Principal Name
 
-First, let's figure out who the heck we are. We'll ask AWS who they think
-we are, to figure out who Hallow will think we are. Keep a note of this ARN,
-this will be used to configure the SSH daemon.
+To find the principal of the certificate, inspect the generated certificate with ssh-keygen. This can be done with the following command-line:
 
 ```
-$ aws sts get-caller-identity --query="Arn"
-"arn:aws:iam::.......:root"
+$ ssh-add -L | ssh-keygen -L -f - | grep -A1 Principals | tail -1 | sed 's/^ *//'
 ```
+
+This will be pasted in the user's principal file later.
 
 #### Remind ourselves of the SSH CA Public Key
 
