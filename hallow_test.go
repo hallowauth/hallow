@@ -6,6 +6,7 @@ import (
 	"crypto/ed25519"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/rsa"
 	"net/http"
 	"testing"
 
@@ -193,6 +194,12 @@ func TestHandleRequest(t *testing.T) {
 		CryptoSigner: p256Key,
 	}
 
+	rsaKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+	rsaChooser := FixedSigner{
+		CryptoSigner: rsaKey,
+	}
+
 	for _, c := range []struct {
 		description     string
 		allowedKeyTypes []string
@@ -230,6 +237,20 @@ func TestHandleRequest(t *testing.T) {
 				checkPrincipal("arn:aws:iam::12345:user/john-doe"),
 				checkExtension("hallow-host@dc.cant.vote", "test.local"),
 				checkSignatureAlgorithm(ssh.KeyAlgoECDSA256),
+			),
+		},
+		{
+			description:     "Valid ed25519, RSA signer",
+			allowedKeyTypes: []string{"ssh-ed25519"},
+			SignerChooser:   rsaChooser,
+			userArn:         "arn:aws:iam::12345:user/john-doe",
+			host:            "test.local",
+			body:            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJOfreF0kMkdJ1ISFvPsucJ7X8UJ07rQV99hQGLYBuSV",
+			responseChecks:  checkStatusCode(http.StatusOK),
+			certChecks: certChecks(
+				checkPrincipal("arn:aws:iam::12345:user/john-doe"),
+				checkExtension("hallow-host@dc.cant.vote", "test.local"),
+				checkSignatureAlgorithm(ssh.SigAlgoRSASHA2512),
 			),
 		},
 		{
