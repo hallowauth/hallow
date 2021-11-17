@@ -12,7 +12,7 @@ computer to talk to the AWS API.
 ## Push Hallow deployment zip to S3
 
 Pull the latest Hallow zip from [GitHub Actions](https://github.com/hallowauth/hallow/actions?query=branch%3Amaster+event%3Apush), or build your own zip using
-`make`, and put that zip in an S3 bucket. When running Terraform, you will
+`export GOARCH=amd64; export GOOS=linux ; make`, and put that zip in an S3 bucket. When running Terraform, you will
 need the bucket name, as well as the name of the file (should be `hallow.zip`).
 
 ## Create Hallow in your AWS Environment
