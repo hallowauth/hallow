@@ -31,7 +31,7 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           args: -E golint
-          version: v1.29
+          version: v1.45.2
         if: matrix.go == '1.17'
       - uses: actions/upload-artifact@v3
         with:
