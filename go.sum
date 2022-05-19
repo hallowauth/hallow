@@ -1,8 +1,8 @@
 github.com/BurntSushi/toml v1.1.0/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
 github.com/ScaleFT/sshkeys v0.0.0-20200221173333-3f3c82330c8c h1:dM4dev9eS/LJoIK857/69AbWNvS8lDzztPphk/cEl3U=
 github.com/ScaleFT/sshkeys v0.0.0-20200221173333-3f3c82330c8c/go.mod h1:Cr204T9MjPsCWwQWY0DSoxeqCE4Pj5LM+bz6cFYgvOE=
-github.com/aws/aws-lambda-go v1.31.1 h1:ECZ4ECLm+watHJ+mjNK8D4gU66UVuR8MfqDKTr/Ffkc=
-github.com/aws/aws-lambda-go v1.31.1/go.mod h1:IF5Q7wj4VyZyUFnZ54IQqeWtctHQ9tz+KhcbDenr220=
+github.com/aws/aws-lambda-go v1.32.0 h1:i8MflawW1hoyYp85GMH7LhvAs4cqzL7LOS6fSv8l2KM=
+github.com/aws/aws-lambda-go v1.32.0/go.mod h1:IF5Q7wj4VyZyUFnZ54IQqeWtctHQ9tz+KhcbDenr220=
 github.com/aws/aws-sdk-go v1.33.2 h1:8TVrnPnSD7I+AmDp66xBUvS3K0J+jH09YXdrkJ34ey0=
 github.com/aws/aws-sdk-go v1.33.2/go.mod h1:5zCpMtNQVjRREroY7sYe8lOMRSxkhG6MZveU8YkpAk0=
 github.com/cpuguy83/go-md2man/v2 v2.0.1 h1:r/myEWzV9lfsM1tFLgDyu0atFtJ1fXn261LKYj/3DxU=
