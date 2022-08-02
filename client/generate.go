@@ -35,8 +35,6 @@ const (
 )
 
 // Generate a key of the given Key Type.
-//
-//
 func generateKey(rand io.Reader, keyType KeyType) (crypto.Signer, crypto.PublicKey, error) {
 	switch keyType {
 	case KeyTypeECDSAP256, KeyTypeECDSAP384, KeyTypeECDSAP521:

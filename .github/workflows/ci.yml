@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: ['1.13', '1.14', '1.15', '1.16', '1.17', '1.18']
+        go: ['1.13', '1.14', '1.15', '1.16', '1.17', '1.18', '1.19']
     name: Go ${{ matrix.go }} build
     steps:
       - uses: actions/checkout@master
@@ -31,20 +31,20 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           args: -E golint
-          version: v1.45.2
-        if: matrix.go == '1.18'
+          version: v1.48.0
+        if: matrix.go == '1.19'
       - uses: actions/upload-artifact@v3
         with:
           name: coverage.html
           path: coverage.html
-        if: matrix.go == '1.18'
+        if: matrix.go == '1.19'
 
       - run: make hallow.zip
       - uses: actions/upload-artifact@v3
         with:
           name: hallow.zip
           path: hallow.zip
-        if: matrix.go == '1.18'
+        if: matrix.go == '1.19'
   terraform:
     runs-on: ubuntu-latest
     strategy:
