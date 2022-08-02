@@ -11,7 +11,6 @@ import (
 	"github.com/hallowauth/hallow/client"
 )
 
-//
 func hallowClientFromCLI(c *cli.Context) (*client.Client, error) {
 	sess, err := session.NewSession()
 	if err != nil {
@@ -21,7 +20,6 @@ func hallowClientFromCLI(c *cli.Context) (*client.Client, error) {
 	return &handle, nil
 }
 
-//
 func keyTypeFromCLI(c *cli.Context) (client.KeyType, error) {
 	switch c.String("key-type") {
 	case "ecdsa256":
