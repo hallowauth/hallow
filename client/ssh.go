@@ -50,7 +50,7 @@ func SSHCLI(signer crypto.Signer, sshCert ssh.PublicKey, sshArgs ...string) ([]s
 }
 
 // DefaultComment will create the default ssh key comment given the local
-// envrionment. The default option will be to construct username@hostname.
+// environment. The default option will be to construct username@hostname.
 //
 // If the username can not be determined, it will default to 'hallow'.
 // If the hostname can not be determined, it will default to the username.

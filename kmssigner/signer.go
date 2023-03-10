@@ -103,7 +103,7 @@ func (k kmsSigner) Sign(_ io.Reader, digest []byte, opts crypto.SignerOpts) ([]b
 		l.WithFields(log.Fields{"error": err}).Warn("kms api call returned an error")
 		return nil, err
 	}
-	l.Debug("sucessfully signed via kms")
+	l.Debug("successfully signed via kms")
 	return signatureResponse.Signature, nil
 }
 

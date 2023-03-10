@@ -168,6 +168,6 @@ func (c Client) RequestCertificate(
 		return nil, err
 	}
 
-	logWithCertificate(pubKey.(*ssh.Certificate)).Debug("Sucessfully got an SSH Certificate")
+	logWithCertificate(pubKey.(*ssh.Certificate)).Debug("Successfully got an SSH Certificate")
 	return pubKey, nil
 }
