@@ -82,7 +82,7 @@ func TestCreatePrincipalNames(t *testing.T) {
 		},
 		{
 			arn:         "arn:aws:rds:us-east-1:12345:db:database",
-			expectedErr: errUnknowUserArnService,
+			expectedErr: errUnknownUserArnService,
 		},
 		{
 			arn:         "arn:aws:sts::12345:assumed-role/",

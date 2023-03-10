@@ -43,7 +43,7 @@ func main() {
 	app := &cli.App{
 		Name:  "hallow-cli",
 		Usage: "talk to the hallow server",
-		Description: `hallow-cli is the refrence program to talk to a hallow endpoint.
+		Description: `hallow-cli is the reference program to talk to a hallow endpoint.
 
    This program contains a number of helpers that are handy when operating or
    interacting with a hallow server, without having to build all the tooling

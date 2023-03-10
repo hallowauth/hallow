@@ -1,4 +1,4 @@
-# Installing SAM (Severless Application Model)
+# Installing SAM (Serverless Application Model)
 
 AWS SAM allows you to test Lambdas locally using Docker and some Python
 glue.

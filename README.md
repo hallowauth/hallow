@@ -18,7 +18,7 @@ Our goals in building a new SSH CA were:
   relatively few moving pieces, and comes with a terraform module.
 - Leverages an existing authentication system. That's why we use AWS IAM for
   authentication, making it trivial to require MFA for SSH.
-- Non-extractible private key. That's why we the CA private key lives in KMS.
+- Non-extractable private key. That's why we the CA private key lives in KMS.
 - Simple to understand. Security tools should make things easier, not more
   complicated. Hallow itself is under 500 lines of code.
 
@@ -80,7 +80,7 @@ AuthorizedPrincipalsFile=/etc/ssh/principals/%u
 ### hallow_cas
 
 Set this file to your own roots. This is an example file, and not the
-the one you should put in your own file, unless you want the authors
+one you should put in your own file, unless you want the authors
 of this package to have root on your boxes.
 
 ```

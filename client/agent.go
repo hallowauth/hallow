@@ -87,7 +87,7 @@ func (c Client) addCertificateToAgent(
 	}); err != nil {
 		l.WithFields(log.Fields{
 			"error": err,
-		}).Warn("failed to add Certifciate to agent")
+		}).Warn("failed to add Certificate to agent")
 		return err
 	}
 	l.Trace("generated key & certificate added to ssh-agent")

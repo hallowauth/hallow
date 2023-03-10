@@ -65,7 +65,7 @@ func getAdditionalPrincipalsForRole(ctx context.Context, iamClient iamiface.IAMA
 }
 
 var errUnsupportedStsResourceType = errors.New("hallow: unsupported sts resource type")
-var errUnknowUserArnService = errors.New("hallow: unknown userArn service")
+var errUnknownUserArnService = errors.New("hallow: unknown userArn service")
 var errMalformedAssumedRoleArn = errors.New("hallow: malformed assumed-role resource")
 
 // createPrincipalNames selects which principals will be assigned for a
@@ -109,7 +109,7 @@ func createPrincipalNames(ctx context.Context, iamClient iamiface.IAMAPI, userAr
 		// and stable.
 		return []string{userArn.String()}, nil
 	default:
-		return nil, errUnknowUserArnService
+		return nil, errUnknownUserArnService
 	}
 }
 
