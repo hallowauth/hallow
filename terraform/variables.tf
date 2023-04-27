@@ -9,7 +9,7 @@ variable "lambda_s3_key" {
 variable "dns" {
   type = object({
     zone_id = string
-    domain = string
+    domain  = string
   })
   default = null
 }
