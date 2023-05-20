@@ -8,6 +8,6 @@ require (
 	github.com/aws/aws-sdk-go v1.44.204
 	github.com/sirupsen/logrus v1.9.2
 	github.com/stretchr/testify v1.8.3
-	github.com/urfave/cli/v2 v2.24.4
+	github.com/urfave/cli/v2 v2.25.3
 	golang.org/x/crypto v0.9.0
 )
