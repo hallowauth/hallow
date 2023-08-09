@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: ['1.17', '1.18', '1.19', '1.20']
+        go: ['1.18', '1.19', '1.20', '1.21']
     name: Go ${{ matrix.go }} build
     steps:
       - uses: actions/checkout@master
@@ -32,19 +32,19 @@ jobs:
         with:
           args: -E golint
           version: v1.51.1
-        if: matrix.go == '1.20'
+        if: matrix.go == '1.21'
       - uses: actions/upload-artifact@v3
         with:
           name: coverage.html
           path: coverage.html
-        if: matrix.go == '1.20'
+        if: matrix.go == '1.21'
 
       - run: make hallow.zip
       - uses: actions/upload-artifact@v3
         with:
           name: hallow.zip
           path: hallow.zip
-        if: matrix.go == '1.20'
+        if: matrix.go == '1.21'
   terraform:
     runs-on: ubuntu-latest
     strategy:
