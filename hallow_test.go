@@ -250,7 +250,7 @@ func TestHandleRequest(t *testing.T) {
 			certChecks: certChecks(
 				checkPrincipal("arn:aws:iam::12345:user/john-doe"),
 				checkExtension("hallow-host@dc.cant.vote", "test.local"),
-				checkSignatureAlgorithm(ssh.KeyAlgoRSASHA512),
+				checkSignatureAlgorithm(ssh.KeyAlgoRSASHA256),
 			),
 		},
 		{
