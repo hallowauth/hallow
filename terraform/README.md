@@ -8,6 +8,10 @@ resources for running Hallow.
 - `lambda_s3_bucket`: Name of an S3 bucket containing the Hallow Lambda `.zip`
 - `lambda_s3_key`: Name of the key in the S3 bucket containing the Hallow
   Lambda `.zip`
+- `dns`: Optional settings to create and associate a custom domain name with
+  the Hallow API Gateway endpoint
+  - `zone_id`: The ID of the Route 53 zone in which to create DNS records
+  - `domain`: The fully-qualified domain name for the Hallow API endpoint
 
 ## Outputs
 
