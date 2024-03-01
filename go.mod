@@ -7,7 +7,7 @@ require (
 	github.com/aws/aws-lambda-go v1.42.0
 	github.com/aws/aws-sdk-go v1.44.204
 	github.com/sirupsen/logrus v1.9.3
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/urfave/cli/v2 v2.26.0
 	golang.org/x/crypto v0.16.0
 )
