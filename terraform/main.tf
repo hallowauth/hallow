@@ -127,3 +127,72 @@ data "aws_iam_policy_document" "request_certificate_policy" {
     resources = ["${aws_api_gateway_rest_api.hallow_api_gateway.execution_arn}/*/*/*"]
   }
 }
+
+resource "aws_api_gateway_domain_name" "hallow_api_gateway" {
+  count = (var.dns == null) ? 0 : 1
+
+  domain_name              = var.dns.domain
+  regional_certificate_arn = aws_acm_certificate.hallow_api_gateway[0].arn
+
+  endpoint_configuration {
+    types = ["REGIONAL"]
+  }
+
+  depends_on = [aws_acm_certificate_validation.hallow_api_gateway]
+}
+
+resource "aws_api_gateway_base_path_mapping" "hallow_api_gateway" {
+  count = (var.dns == null) ? 0 : 1
+
+  api_id      = aws_api_gateway_rest_api.hallow_api_gateway.id
+  domain_name = aws_api_gateway_domain_name.hallow_api_gateway[0].domain_name
+}
+
+resource "aws_route53_record" "hallow_api_gateway" {
+  count = (var.dns == null) ? 0 : 1
+
+  zone_id = var.dns.zone_id
+  name    = aws_api_gateway_domain_name.hallow_api_gateway[0].domain_name
+  type    = "A"
+
+  alias {
+    zone_id                = aws_api_gateway_domain_name.hallow_api_gateway[0].regional_zone_id
+    name                   = aws_api_gateway_domain_name.hallow_api_gateway[0].regional_domain_name
+    evaluate_target_health = true
+  }
+}
+
+resource "aws_acm_certificate" "hallow_api_gateway" {
+  count = (var.dns == null) ? 0 : 1
+
+  domain_name       = var.dns.domain
+  validation_method = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_acm_certificate_validation" "hallow_api_gateway" {
+  count = (var.dns == null) ? 0 : 1
+
+  certificate_arn         = aws_acm_certificate.hallow_api_gateway[0].arn
+  validation_record_fqdns = [for record in aws_route53_record.certificate_validation : record.fqdn]
+}
+
+resource "aws_route53_record" "certificate_validation" {
+  for_each = (var.dns == null) ? {} : {
+    for option in aws_acm_certificate.hallow_api_gateway[0].domain_validation_options :
+    option.domain_name => {
+      name  = option.resource_record_name
+      type  = option.resource_record_type
+      value = option.resource_record_value
+    }
+  }
+
+  zone_id = var.dns.zone_id
+  name    = each.value.name
+  type    = each.value.type
+  records = [each.value.value]
+  ttl     = 300
+}
